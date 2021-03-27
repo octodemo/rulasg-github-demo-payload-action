@@ -27,7 +27,7 @@ async function exec() {
       owner: getRequiredInput('repository_owner'),
       repo: getRequiredInput('repository_name'),
     },
-    user: getRequiredInput('user'),
+    user: core.getInput('user'),
     issue: core.getInput('issue_id'),
   };
 
