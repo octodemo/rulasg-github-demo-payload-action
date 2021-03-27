@@ -18,4 +18,4 @@ outputs:
 
 runs:
   using: node12
-  main: './dist/demo-repository-secrets/index.js'
+  main: '../dist/demo-repository-secrets/index.js'
