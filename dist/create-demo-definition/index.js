@@ -155,10 +155,10 @@ async function exec() {
     await payload.validate(octokit);
     payload.setActionsOutputs();
     core.startGroup('Action outputs');
-    core.info(JSON.stringify(payload.getOutputs()));
+    core.info(JSON.stringify(payload.getOutputs(), null, 2));
     core.endGroup();
     core.startGroup('Terraform variables');
-    core.info(JSON.stringify(payload.getTerraformVariables()));
+    core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
     core.endGroup();
 }
 //# sourceMappingURL=create-demo-definition.js.map

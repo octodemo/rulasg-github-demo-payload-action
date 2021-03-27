@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import { inspect } from 'util';
 import { DemoPayload } from '../DemoPayload';
-import { getRequiredInput, getOctokit } from '../util';
+import { getOctokit, getRequiredInput } from '../util';
 
 async function run() {
   try {
@@ -39,11 +39,11 @@ async function exec() {
   payload.setActionsOutputs();
 
   core.startGroup('Action outputs');
-  core.info(JSON.stringify(payload.getOutputs()));
+  core.info(JSON.stringify(payload.getOutputs(), null, 2));
   core.endGroup();
 
   core.startGroup('Terraform variables');
-  core.info(JSON.stringify(payload.getTerraformVariables()));
+  core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
   core.endGroup();
 }
 
