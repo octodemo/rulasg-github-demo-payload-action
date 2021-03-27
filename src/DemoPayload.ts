@@ -54,7 +54,7 @@ export class DemoPayload {
           ref: this.template.ref,
         },
         target_repository: {
-          ...this.template.repo
+          ...this.target
         },
       },
 
