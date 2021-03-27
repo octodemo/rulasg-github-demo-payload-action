@@ -49,8 +49,13 @@ export class DemoPayload {
     const result = {
       github_context: {
         actor: this.user,
-        template_repository: { ...this.template },
-        target_repository: { ...this.template },
+        template_repository: {
+          ...this.template.repo,
+          ref: this.template.ref,
+        },
+        target_repository: {
+          ...this.template.repo
+        },
       },
 
       azure_context: {},
