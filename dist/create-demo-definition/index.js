@@ -152,7 +152,7 @@ async function exec() {
             owner: util_2.getRequiredInput('repository_owner'),
             repo: util_2.getRequiredInput('repository_name'),
         },
-        user: util_2.getRequiredInput('user'),
+        user: core.getInput('user'),
         issue: core.getInput('issue_id'),
     };
     const payload = new DemoPayload_1.DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue);
