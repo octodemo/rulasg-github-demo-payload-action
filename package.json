@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "build:create-demo-definition": "npm run build && ncc build lib/actions/create-demo-definition.js -o dist/create-demo-definition --source-map",
-    "package": "npm run build:create-demo-definition",
+    "build:demo-repository-secrets": "npm run build && ncc build lib/actions/demo-repository-secrets.js -o dist/demo-repository-secrets --source-map",
+    "package": "npm run build:create-demo-definition && npm run build:demo-repository-secrets",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
@@ -23,7 +24,6 @@
   "dependencies": {
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
-    "@octokit/core": "^3.3.1",
     "@octokit/rest": "^18.5.2"
   },
   "devDependencies": {

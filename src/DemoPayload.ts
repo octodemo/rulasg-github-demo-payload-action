@@ -87,7 +87,7 @@ export class DemoPayload {
       result['validation_repository_exists'] = this.validation.targetRepoExists;
     }
 
-    result['terraform_variables'] = `JSON.stringify(this.getTerraformVariables())`
+    result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`
 
     return result;
   }

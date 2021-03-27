@@ -74,7 +74,6 @@ outputs:
   validation_template_repository_ref_exists:
     description:
 
-
 runs:
   using: node12
   main: './dist/create-demo-definition/index.js'

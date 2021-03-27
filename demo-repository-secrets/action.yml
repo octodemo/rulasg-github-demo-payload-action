@@ -1,0 +1,21 @@
+name: 'GitHub Demo Definition'
+description: Builds a demo definition payload for provisioning demos.
+author: 'Peter Murray'
+
+inputs:
+  base_directory:
+    description: The base directory to look for the secrets file in.
+    default: '${{ github.workspace }}/template'
+    required: true
+
+  secrets_file:
+    description: The path to the secrets JSON file relative to the base directory
+    default: '.demo/secrets.json'
+
+outputs:
+  organization_secrets:
+    description: A JSON encoded array of organization secret names that the resposity needs access to.
+
+runs:
+  using: node12
+  main: './dist/demo-repository-secrets/index.js'
