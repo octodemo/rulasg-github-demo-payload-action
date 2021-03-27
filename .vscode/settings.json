@@ -20,5 +20,10 @@
     },
     "[xml]": {
       "editor.tabSize": 4
+    },
+
+    "editor.codeActionsOnSave": {
+      "source.fixAll": true,
+      "source.organizeImports": true,
     }
   }
