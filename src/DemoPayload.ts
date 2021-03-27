@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import { Repository, repositoryBranchExists, repositoryExists } from './util'
+import { Repository, repositoryBranchExists, repositoryExists } from './util';
 
 export type Template = {
   repo: Repository,
