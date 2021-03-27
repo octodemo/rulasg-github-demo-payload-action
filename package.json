@@ -5,6 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
+    "build:create-demo-definition": "npm run build && ncc build lib/actions/create-demo-definition.js -o dist/create-demo-definition --source-map",
+    "package": "npm run build:create-demo-definition",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
@@ -19,12 +21,15 @@
   },
   "homepage": "https://github.com/peter-murray/github-demo-payload-action#readme",
   "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
     "@octokit/core": "^3.3.1",
     "@octokit/rest": "^18.5.2"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
     "@types/node": "^14.14.37",
+    "@vercel/ncc": "^0.27.0",
     "chai": "^4.3.4",
     "mocha": "^8.3.2",
     "ts-node": "^9.1.1",
