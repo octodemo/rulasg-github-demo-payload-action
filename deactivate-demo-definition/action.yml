@@ -1,0 +1,20 @@
+name: 'GitHub Demo - Deactivate Demo Deployment'
+description: Deactivates the demo environment and demo deployment
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use to validate the provided data
+    default: ${{ github.token }}
+
+  environment_deployment_id:
+    description: the id of the environment deployment that tracks the demo repository and resources.
+    required: true
+
+  demo_deployment_id:
+    description: The id of the demo deployment that contains the demo metadata.
+    required: true
+
+runs:
+  using: node12
+  main: '../dist/deactivate-demo-definition/index.js'
