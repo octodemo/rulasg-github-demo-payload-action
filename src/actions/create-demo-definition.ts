@@ -41,7 +41,19 @@ async function exec() {
 
   if (inputs.prevent_duplicates) {
     if (validation.targetRepoExists) {
-      throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+      try {
+        if (inputs.issue) {
+          await octokit.issues.addLabels({
+            ...github.context.repo,
+            issue_number: parseInt(inputs.issue),
+            labels: ['duplicate']
+          });
+        }
+      } catch (err) {
+        core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
+      } finally {
+        throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+      }
     }
   }
 
