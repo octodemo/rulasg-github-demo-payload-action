@@ -9,7 +9,7 @@
     "build:extract-demo-definition": "npm run build && ncc build lib/actions/extract-demo-definition.js -o dist/extract-demo-definition --source-map",
     "build:deactivate-demo-definition": "npm run build && ncc build lib/actions/deactivate-demo-definition.js -o dist/deactivate-demo-definition --source-map",
     "build:demo-repository-secrets": "npm run build && ncc build lib/actions/demo-repository-secrets.js -o dist/demo-repository-secrets --source-map",
-    "package": "npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition",
+    "package": "npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
