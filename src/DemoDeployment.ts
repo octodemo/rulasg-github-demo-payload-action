@@ -36,15 +36,7 @@ export class DemoDeployment {
   }
 
   get payload(): DemoPayloadContext | undefined  {
-    if (this.data.payload) {
-      try {
-        const data: DemoPayloadContext = JSON.parse(this.data.payload);
-        return data;
-      } catch (err) {
-        return undefined;
-      }
-    }
-    return undefined;
+    return this.data.payload;
   }
 
   getCurrentStatus(): Promise<DeploymentStatus | undefined> {

@@ -1,0 +1,41 @@
+name: 'GitHub Demo - Extract Payload'
+description: Extracts the payload for an existing demo deployment
+author: 'Peter Murray'
+
+inputs:
+  repository_owner:
+    description: The owner of the demo repository.
+    required: true
+
+  repository_name:
+    description: The name for the demo repository
+    required: true
+
+outputs:
+  environment_name:
+    description: The environment name for the demo.
+
+  environment_deployment_id:
+    description: The id for the environment deployment that was created fro the demo (created by Actions environment reference in workflows).
+
+  terraform_variables:
+    description: The JSON payload (in string encoded form) used to create the demo and resources.
+
+  tracking_issue_id:
+    description: The GitHub Issue ID that is being used to track the demo lifecycle, optional.
+
+  template_repository_full_name:
+    description: The full <owner>/<repo> value for the template repository that the demo is built from.
+
+  template_repository_ref:
+    description: The branch reference for the template repoisotry that the demo is built from.
+
+  demo_environment_deployment_id:
+    description: The ID for the deployment that contains the demo metadata and lifecycle.
+
+  demo_environment_deployment_name:
+    description: The name of the deployment that contains the demo metadata and lifecycle.
+
+runs:
+  using: node12
+  main: '../dist/extract-demo-definition/index.js'

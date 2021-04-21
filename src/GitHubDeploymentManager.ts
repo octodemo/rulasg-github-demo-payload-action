@@ -168,9 +168,18 @@ export class GitHubDeploymentManager {
 function extractDeployment(deployment: {[key: string]: any }): GitHubDeployment {
   // @ts-ignore
   const result: GitHubDeployment = {};
-  ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'payload', 'environment'].forEach(key => {
+  ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'environment'].forEach(key => {
     result[key] = deployment[key];
   });
+
+  if (deployment.payload) {
+    if (typeof deployment.payload === 'string' || deployment.payload instanceof String) {
+      //@ts-ignore
+      result.payload = JSON.parse(deployment.payload);
+    } else {
+      result.payload = deployment.payload;
+    }
+  }
 
   return result;
 }

@@ -40,7 +40,7 @@ export type GitHubDeployment = {
   description?: string,
   ref: string,
   task: string,
-  payload?: string,
+  payload?: DemoPayloadContext,
 }
 
 
