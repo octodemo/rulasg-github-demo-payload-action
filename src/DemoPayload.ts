@@ -1,12 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
+import { Template } from './types';
 import { Repository, repositoryBranchExists, repositoryExists } from './util';
-
-export type Template = {
-  repo: Repository,
-  ref: string,
-}
 
 
 export type Validation = {
@@ -37,12 +33,14 @@ export class DemoPayload {
     }
   }
 
-  async validate(octokit: Octokit) {
+  async validate(octokit: Octokit): Promise<Validation> {
     this.validation = {
       templateExists: await repositoryExists(octokit, this.template.repo),
       templateRefExists: await repositoryBranchExists(octokit, this.template.repo, this.template.ref),
       targetRepoExists: await repositoryExists(octokit, this.target),
     }
+
+    return this.validation;
   }
 
   getTerraformVariables(): { [key: string]: any } {

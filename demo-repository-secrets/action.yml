@@ -1,5 +1,5 @@
-name: 'GitHub Demo Definition'
-description: Builds a demo definition payload for provisioning demos.
+name: 'GitHub Demo - Repository Secrets'
+description: Detects and defines the secrets needed by the demo repository.
 author: 'Peter Murray'
 
 inputs:
@@ -14,7 +14,7 @@ inputs:
 
 outputs:
   organization_secrets:
-    description: A JSON encoded array of organization secret names that the resposity needs access to.
+    description: A JSON encoded array of organization secret names that the repository needs access to.
 
 runs:
   using: node12

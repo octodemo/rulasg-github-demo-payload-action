@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
+import * as github from '@actions/github';
 import { inspect } from 'util';
 import { DemoPayload } from '../DemoPayload';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { getOctokit, getRequiredInput } from '../util';
 
 async function run() {
@@ -29,16 +31,36 @@ async function exec() {
     },
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
+    prevent_duplicates: !!core.getInput('prevent_duplicates')
   };
 
+  const octokit = getOctokit();
+  const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
   const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue);
+  const validation = await payload.validate(octokit);
 
-  const octokit = getOctokit(core.getInput('github_token'));
-  await payload.validate(octokit);
+  if (inputs.prevent_duplicates) {
+    if (validation.targetRepoExists) {
+      throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+    }
+  }
 
-  payload.setActionsOutputs();
+  // Create the demo deployment on the repository for the provisioning
+  const demoDeployment = await deploymentManager.createDemoDeployment(
+    `${inputs.target.owner}/${inputs.target.repo}`,
+    payload.getTerraformVariables()
+  );
+
+  // Show the demo deployment in progress
+  await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress');
+
+  core.startGroup('Demo Deployment')
+  core.setOutput('demo_deployment_id', demoDeployment.id);
+  core.info(`id = ${demoDeployment.id}`);
+  core.endGroup();
 
   core.startGroup('Action outputs');
+  payload.setActionsOutputs();
   core.info(JSON.stringify(payload.getOutputs(), null, 2));
   core.endGroup();
 
@@ -46,4 +68,3 @@ async function exec() {
   core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
   core.endGroup();
 }
-

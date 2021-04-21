@@ -1,5 +1,5 @@
 name: 'GitHub Demo Definition'
-description: Builds a demo definition payload for provisioning demos.
+description: Builds a demo definition providing it as outputs and registers a deployment to track the demo lifecycle.
 author: 'Peter Murray'
 
 inputs:
@@ -36,6 +36,11 @@ inputs:
 
   issue_id:
     description: An Issue id that is tracking the lifecycle of the demo repository. This is optional
+
+  prevent_duplicates:
+    description: Prevent duplicate demo instances from being created, i.e. fail early
+    default: true
+    required: false
 
 outputs:
   template_repository_full_name:

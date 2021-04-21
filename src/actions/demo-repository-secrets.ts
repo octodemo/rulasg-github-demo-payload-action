@@ -2,8 +2,12 @@ import * as core from '@actions/core';
 import * as path from 'path';
 import * as fs from 'fs';
 import {inspect} from 'util';
-
 import { getRequiredInput } from '../util';
+
+type Secrets = {
+  organization?: string[]
+}
+
 
 
 async function run() {
@@ -16,9 +20,6 @@ async function run() {
 }
 run();
 
-type Secrets = {
-  organization?: string[]
-}
 
 async function exec() {
   const baseDirectory = getRequiredInput('base_directory')
