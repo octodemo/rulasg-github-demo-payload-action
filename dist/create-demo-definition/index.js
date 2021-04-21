@@ -431,16 +431,17 @@ async function exec() {
             throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
         }
     }
+    // Provide the outputs to the workflow
+    payload.setActionsOutputs();
     // Create the demo deployment on the repository for the provisioning
     const demoDeployment = await deploymentManager.createDemoDeployment(`${inputs.target.owner}/${inputs.target.repo}`, payload.getTerraformVariables());
+    core.setOutput('demo_deployment_id', demoDeployment.id);
     // Show the demo deployment in progress
     await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress');
     core.startGroup('Demo Deployment');
-    core.setOutput('demo_deployment_id', demoDeployment.id);
     core.info(`id = ${demoDeployment.id}`);
     core.endGroup();
     core.startGroup('Action outputs');
-    payload.setActionsOutputs();
     core.info(JSON.stringify(payload.getOutputs(), null, 2));
     core.endGroup();
     core.startGroup('Terraform variables');
