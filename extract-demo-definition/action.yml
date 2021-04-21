@@ -3,6 +3,10 @@ description: Extracts the payload for an existing demo deployment
 author: 'Peter Murray'
 
 inputs:
+  github_token:
+    description: The GitHub token to use to validate the provided data
+    default: ${{ github.token }}
+
   repository_owner:
     description: The owner of the demo repository.
     required: true
