@@ -79,6 +79,9 @@ outputs:
   validation_template_repository_ref_exists:
     description:
 
+  demo_deployment_id:
+    description: The id of the deployment used to track the metadata from the demo and resources.
+
 runs:
   using: node12
   main: './dist/create-demo-definition/index.js'
