@@ -40,6 +40,9 @@ outputs:
   demo_environment_deployment_name:
     description: The name of the deployment that contains the demo metadata and lifecycle.
 
+  environment_is_duplicate:
+    description: Boolean flag indicating if issue/environment is a duplicate.
+
 runs:
   using: node12
   main: '../dist/extract-demo-definition/index.js'

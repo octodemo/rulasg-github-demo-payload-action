@@ -47,7 +47,13 @@ async function exec() {
     if (payload?.github_context.tracking_issue) {
       const issueId: number | undefined = payload.github_context.tracking_issue.id;
       if (issueId) {
+        core.info(`tracking_issue_id: ${issueId}`);
         core.setOutput('tracking_issue_id', issueId);
+
+        // Check to see if we are a duplicate per the tracking issue
+        const duplicate = await demoDeployment.isDuplicate();
+        core.info(`environment_is_duplicate: ${duplicate}`);
+        core.setOutput('environment_is_duplicate', duplicate);
       }
     }
 

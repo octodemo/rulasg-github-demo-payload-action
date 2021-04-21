@@ -78,6 +78,14 @@ class DemoDeployment {
         }
         return undefined;
     }
+    async isDuplicate() {
+        const issueId = this.getTrackingIssue();
+        if (issueId) {
+            const labels = await this.deploymentManager.getIssueLabels(issueId);
+            return labels.indexOf('duplicate') > -1;
+        }
+        return false;
+    }
 }
 exports.DemoDeployment = DemoDeployment;
 //# sourceMappingURL=DemoDeployment.js.map
@@ -316,6 +324,17 @@ class GitHubDeploymentManager {
                 throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
             }
             return createDeploymentStatus(resp.data);
+        });
+    }
+    getIssueLabels(issueId) {
+        return this.github.issues.listLabelsOnIssue({
+            ...this.repo,
+            issue_number: issueId,
+            per_page: 100
+        }).then(resp => {
+            return resp.data.map(label => label.name);
+        }).catch(() => {
+            return [];
         });
     }
     extractDemoDeploymentsFromResponse(resp) {

@@ -78,6 +78,14 @@ class DemoDeployment {
         }
         return undefined;
     }
+    async isDuplicate() {
+        const issueId = this.getTrackingIssue();
+        if (issueId) {
+            const labels = await this.deploymentManager.getIssueLabels(issueId);
+            return labels.indexOf('duplicate') > -1;
+        }
+        return false;
+    }
 }
 exports.DemoDeployment = DemoDeployment;
 //# sourceMappingURL=DemoDeployment.js.map
@@ -219,6 +227,17 @@ class GitHubDeploymentManager {
             return createDeploymentStatus(resp.data);
         });
     }
+    getIssueLabels(issueId) {
+        return this.github.issues.listLabelsOnIssue({
+            ...this.repo,
+            issue_number: issueId,
+            per_page: 100
+        }).then(resp => {
+            return resp.data.map(label => label.name);
+        }).catch(() => {
+            return [];
+        });
+    }
     extractDemoDeploymentsFromResponse(resp) {
         if (resp.status === 200 && resp.data && resp.data.length > 0) {
             const results = [];
@@ -331,7 +350,12 @@ async function exec() {
         if (payload === null || payload === void 0 ? void 0 : payload.github_context.tracking_issue) {
             const issueId = payload.github_context.tracking_issue.id;
             if (issueId) {
+                core.info(`tracking_issue_id: ${issueId}`);
                 core.setOutput('tracking_issue_id', issueId);
+                // Check to see if we are a duplicate per the tracking issue
+                const duplicate = await demoDeployment.isDuplicate();
+                core.info(`environment_is_duplicate: ${duplicate}`);
+                core.setOutput('environment_is_duplicate', duplicate);
             }
         }
         const templateRepo = payload === null || payload === void 0 ? void 0 : payload.github_context.template_repository;

@@ -90,4 +90,13 @@ export class DemoDeployment {
     }
     return undefined;
   }
+
+  async isDuplicate(): Promise<boolean> {
+    const issueId = this.getTrackingIssue();
+    if (issueId) {
+      const labels: string[] = await this.deploymentManager.getIssueLabels(issueId);
+      return labels.indexOf('duplicate') > -1;
+    }
+    return false;
+  }
 }

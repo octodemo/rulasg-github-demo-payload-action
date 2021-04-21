@@ -148,6 +148,18 @@ export class GitHubDeploymentManager {
     });
   }
 
+  getIssueLabels(issueId: number): Promise<string[]> {
+    return this.github.issues.listLabelsOnIssue({
+      ...this.repo,
+      issue_number: issueId,
+      per_page: 100
+    }).then(resp => {
+      return resp.data.map(label => label.name);
+    }).catch(() => {
+      return [];
+    })
+  }
+
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
     if (resp.status === 200 && resp.data && resp.data.length > 0) {
       const results: DemoDeployment[] = [];
