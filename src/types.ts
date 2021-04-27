@@ -18,6 +18,7 @@ export type DeploymentStatus = {
   state: DeploymentState,
   description?: string,
   environment?: string,
+  log_url?: string,
   created_at: string,
   updated_at: string,
 }

@@ -23,6 +23,10 @@ inputs:
     description: The workflow status, 'success', 'failed' or 'cancelled'
     required: true
 
+  description:
+    description: The description for the deployment status
+    required: false
+
 runs:
   using: node12
   main: '../dist/demo-provisioning-status/index.js'

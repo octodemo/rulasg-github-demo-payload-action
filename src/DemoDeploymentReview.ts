@@ -1,101 +1,126 @@
-// import { Octokit } from "@octokit/rest";
-// import { DemoDeployment } from "./DemoDeployment";
-// import { GitHubDeploymentManager } from "./GitHubDeploymentManager";
-// import { Repository } from "./types";
+import { Octokit } from "@octokit/rest";
+import { DEMO_STATES } from "./constants";
+import { DemoDeployment } from "./DemoDeployment";
+import { GitHubDeploymentManager } from "./GitHubDeploymentManager";
+import { DeploymentState, DeploymentStatus, Repository } from "./types";
 
+export type DemoReview = {
+  demo: DemoDeployment,
+  active_days: number,
+  in_error: boolean,
+  status?: DeploymentState,
+  description?: string,
+  log_url?: string,
+  issue?: {
+    id: number,
+    labels?: string[]
+  }
+}
 
-// export type DemoReview = {
-//   demo: DemoDeployment,
-//   activeDays?: number,
-//   issue?: {
-//     id: number,
-//     labels?: string[]
-//   }
-//   warn: boolean,
-//   terminate: boolean,
-// }
+export type AnalysisResults = {
+  errored: DemoReview[],
+  warnings: DemoReview[],
+  terminations: DemoReview[]
+}
 
+export class DemoDeploymentReview {
 
-// export class DemoDeploymentReview {
+  private readonly deploymentManager: GitHubDeploymentManager;
 
-//   private readonly deploymentManager: GitHubDeploymentManager;
+  private allDemos?: DemoDeployment[];
 
-//   private allDemos?: DemoDeployment[];
+  private loaded: boolean = false;
 
-//   private loaded: boolean = false;
+  static async createDemoReview(octokit: Octokit, repo: Repository, ref?: string): Promise<DemoDeploymentReview> {
+    const review = new DemoDeploymentReview(octokit, repo, ref);
+    await review.load();
+    return review;
+  }
 
-//   static async createDemoReview(octokit: Octokit, repo: Repository, ref?: string): Promise<DemoDeploymentReview> {
-//     const review = new DemoDeploymentReview(octokit, repo, ref);
-//     await review.load();
-//     return review;
-//   }
+  protected constructor(octokit: Octokit, repo: Repository, ref?: string) {
+    this.deploymentManager = new GitHubDeploymentManager(repo, octokit, ref);
+    this.loaded = false;
+  }
 
-//   protected constructor(octokit: Octokit, repo: Repository, ref?: string) {
-//     this.deploymentManager = new GitHubDeploymentManager(repo, octokit, ref);
-//     this.loaded = false;
-//   }
+  async getAllDemoDeployments() {
+    return this.load();
+  }
 
-//   async getAllDemoDeployments() {
-//     return this.load();
-//   }
+  async loadDemoReviews(): Promise<DemoReview[]> {
+    return this.getAllDemoDeployments()
+      .then(demos => {
+        const promises: Promise<DemoReview>[] = [];
+        demos?.forEach(demo => {
+          promises.push(this.generateDemoReview(demo));
+        });
+        return Promise.all(promises);
+      });
+  }
 
-//   async processActivityDurations(warningDays: number = 7, maxActiveDays: number = 15): Promise<DemoReview[]> {
-//     const validationPromises: Promise<DemoReview>[] = [];
-//     const demos = await this.load();
+  async analyze(warningDays: number = 7, maxActiveDays: number = 15): Promise<AnalysisResults> {
+    const reviews: DemoReview[] = await this.loadDemoReviews();
 
-//     demos?.forEach(demo => {
-//       validationPromises.push(this.validateDemo(demo, warningDays, maxActiveDays));
-//     })
+    const results: AnalysisResults = {
+      errored: [],
+      warnings: [],
+      terminations: [],
+    };
 
-//     // const results = await Promise.all(validationPromises);
-//     return await Promise.all(validationPromises);
-//   }
+    reviews.forEach(review => {
+      const demoActiveDays = review.active_days;
 
-//   async analyze() {
-//     const demos: DemoDeployment[] = this.getAllDemoDeployments();
+      if (review.in_error) {
+        results.errored.push(review);
+      }
 
-//     demos.forEach(demo => {
-//       const trackingIssue = demo.getTrackingIssue();
+      if (demoActiveDays > warningDays) {
+        if (review.description !== DEMO_STATES.marked_hold) {
+          results.warnings.push(review);
+        }
+      }
 
-//       if(trackingIssue) {
-//         this.deploymentManager.getIssueLabels(trackingIssue)
-//       }
+      if (demoActiveDays > maxActiveDays) {
+        if (review.description !== DEMO_STATES.marked_hold) {
+          results.terminations.push(review)
+        }
+      }
+    });
 
-//     });
-//   }
+    return results;
+  }
 
-//   async validateDemo(demo: DemoDeployment, warningDays: number, maxActiveDays: number): Promise<DemoReview> {
-//     const demoActiveDays = await demo.getActiveDays()
-//       , results: DemoReview = {
-//           demo: demo,
-//           activeDays: demoActiveDays,
-//           warn: false,
-//           terminate: false,
-//         }
-//       ;
+  async generateDemoReview(demo: DemoDeployment): Promise<DemoReview> {
+    const status: DeploymentStatus | undefined = await demo.getCurrentStatus()
+      , demoActiveDays = await demo.getActiveDays()
+      , trackingIssue = demo.getTrackingIssue()
+      ;
 
-//     if (demoActiveDays > warningDays) {
-//       if (demo.getTrackingIssue()) {
-//         // Report warning
+    const result: DemoReview = {
+      demo: demo,
+      active_days: demoActiveDays,
+      status: status?.state,
+      in_error: status?.state !== 'success',
+      description: status?.description,
+      log_url: status?.log_url,
+    };
 
-//       }
-//     }
+    if (trackingIssue) {
+      const labels = await this.deploymentManager.getIssueLabels(trackingIssue);
+      result.issue = {
+        id: trackingIssue,
+        labels: labels,
+      }
+    }
 
-//     if (demoActiveDays > maxActiveDays) {
-//       if (demo.getTrackingIssue()) {
-//         // Report termination
-//       }
-//     }
+    return result;
+  }
 
-//     return results
-//   }
-
-//   private async load(): Promise<DemoDeployment[]> {
-//     if (! this.loaded) {
-//       this.allDemos = await this.deploymentManager.getAllDemoDeployments();
-//       this.loaded = true;
-//     }
-//     // @ts-ignore
-//     return this.allDemos;
-//   }
-// }
+  private async load(): Promise<DemoDeployment[]> {
+    if (! this.loaded) {
+      this.allDemos = await this.deploymentManager.getAllDemoDeployments();
+      this.loaded = true;
+    }
+    // @ts-ignore
+    return this.allDemos;
+  }
+}

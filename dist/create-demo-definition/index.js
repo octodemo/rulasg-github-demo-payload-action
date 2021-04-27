@@ -442,6 +442,7 @@ function createDeploymentStatus(status) {
         environment: status.environment || '',
         created_at: status.created_at,
         updated_at: status.updated_at,
+        log_url: status.log_url,
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
@@ -561,7 +562,7 @@ exports.DEMO_STATES = {
     destroying: 'demo::destroying',
     destroyed: 'demo::destroyed',
     error: 'demo::error',
-    marked_hold: 'demo::lifecycle_hold',
+    marked_hold: 'demo::hold',
     marked_warning: 'demo::lifecycle_warning',
     marked_termination: 'demo::lifecycle_terminate',
 };

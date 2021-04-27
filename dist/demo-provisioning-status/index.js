@@ -343,6 +343,7 @@ function createDeploymentStatus(status) {
         environment: status.environment || '',
         created_at: status.created_at,
         updated_at: status.updated_at,
+        log_url: status.log_url,
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
@@ -395,7 +396,8 @@ async function exec() {
         name: core.getInput('name'),
         id: parseInt(core.getInput('id')),
         run_id: util_2.getRequiredInput('actions_run_id'),
-        status: util_2.getRequiredInput('status')
+        status: util_2.getRequiredInput('status'),
+        description: core.getInput('description'),
     };
     if (!!inputs.name && !!inputs.id) {
         core.setFailed(`One of 'name' or 'id' must be provided to update a demo deployment state.`);
@@ -403,7 +405,7 @@ async function exec() {
     else {
         const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, util_2.getOctokit(), github.context.ref);
         let deployment = await getDeployment(deploymentManager, inputs);
-        const state = validateStatus(inputs.status);
+        const state = validateStatus(inputs.status, inputs.description);
         const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
         core.info(`Updating demo deployment ${deployment.id} status...`);
         await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
@@ -417,14 +419,24 @@ async function exec() {
         }
     }
 }
-function validateStatus(status) {
+function validateStatus(status, description) {
     if (status === 'success') {
-        return {
-            deploymentState: 'success',
-            demoState: constants_1.DEMO_STATES.provisioned,
-            labelsAdd: [constants_1.DEMO_STATES.provisioned],
-            labelsRemove: [constants_1.DEMO_STATES.provisioning, constants_1.DEMO_STATES.error],
-        };
+        if (description === constants_1.DEMO_STATES.marked_hold) {
+            return {
+                deploymentState: 'success',
+                demoState: constants_1.DEMO_STATES.marked_hold,
+                labelsAdd: [constants_1.DEMO_STATES.marked_hold],
+                labelsRemove: [],
+            };
+        }
+        else {
+            return {
+                deploymentState: 'success',
+                demoState: constants_1.DEMO_STATES.provisioned,
+                labelsAdd: [constants_1.DEMO_STATES.provisioned],
+                labelsRemove: [constants_1.DEMO_STATES.provisioning, constants_1.DEMO_STATES.error],
+            };
+        }
     }
     else if (status === 'failure' || status === 'cancelled') {
         return {
@@ -470,7 +482,7 @@ exports.DEMO_STATES = {
     destroying: 'demo::destroying',
     destroyed: 'demo::destroyed',
     error: 'demo::error',
-    marked_hold: 'demo::lifecycle_hold',
+    marked_hold: 'demo::hold',
     marked_warning: 'demo::lifecycle_warning',
     marked_termination: 'demo::lifecycle_terminate',
 };

@@ -23,7 +23,8 @@ async function exec() {
     name: core.getInput('name'),
     id: parseInt(core.getInput('id')),
     run_id: getRequiredInput('actions_run_id'),
-    status: getRequiredInput('status')
+    status: getRequiredInput('status'),
+    description: core.getInput('description'),
   };
 
   if (!!inputs.name && !!inputs.id) {
@@ -32,7 +33,7 @@ async function exec() {
     const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
     let deployment = await getDeployment(deploymentManager, inputs);
 
-    const state = validateStatus(inputs.status);
+    const state = validateStatus(inputs.status, inputs.description);
     const logUrl = `https://github.com/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
@@ -56,13 +57,22 @@ type DemoStatus = {
   labelsRemove: string[],
 };
 
-function validateStatus(status: string): DemoStatus {
+function validateStatus(status: string, description?: string): DemoStatus {
   if (status === 'success') {
-    return {
-      deploymentState: 'success',
-      demoState: DEMO_STATES.provisioned,
-      labelsAdd: [DEMO_STATES.provisioned],
-      labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.error],
+    if (description === DEMO_STATES.marked_hold) {
+      return {
+        deploymentState: 'success',
+        demoState: DEMO_STATES.marked_hold,
+        labelsAdd: [DEMO_STATES.marked_hold],
+        labelsRemove: [],
+      };
+    } else {
+      return {
+        deploymentState: 'success',
+        demoState: DEMO_STATES.provisioned,
+        labelsAdd: [DEMO_STATES.provisioned],
+        labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.error],
+      };
     }
   } else if (status === 'failure' || status === 'cancelled') {
     return {
@@ -70,7 +80,7 @@ function validateStatus(status: string): DemoStatus {
       demoState: DEMO_STATES.error,
       labelsAdd: [DEMO_STATES.error],
       labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.provisioned, DEMO_STATES.destroying, DEMO_STATES.destroyed],
-    }
+    };
   } else {
     throw new Error(`Unsupported status type provided '${status}'`);
   }

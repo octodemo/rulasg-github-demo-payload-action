@@ -278,5 +278,6 @@ function createDeploymentStatus(status: { [key: string]: any }): DeploymentStatu
     environment: status.environment || '',
     created_at: status.created_at,
     updated_at: status.updated_at,
+    log_url: status.log_url,
   }
 }
