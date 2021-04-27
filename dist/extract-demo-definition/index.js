@@ -193,6 +193,17 @@ class GitHubDeploymentManager {
             return undefined;
         });
     }
+    getDemoDeploymentById(id) {
+        return this.github.repos.getDeployment({
+            ...this.repo,
+            deployment_id: id,
+        }).then(resp => {
+            if (resp.data.task !== constants_1.DEMO_DEPLOYMENT_TASK) {
+                throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
+            }
+            return this.extractDemoDeployment(resp.data);
+        });
+    }
     createDemoDeployment(name, payload) {
         return this.github.repos.createDeployment({
             ...this.repo,
@@ -211,16 +222,31 @@ class GitHubDeploymentManager {
             return this.extractDemoDeployment(result.data);
         });
     }
-    updateDeploymentStatus(id, state) {
-        return this.github.repos.createDeploymentStatus({
+    setDemoDeploymentStateProvisioning(id) {
+        return this.updateDeploymentStatus(id, 'in_progress', constants_1.DEMO_STATES.provisioning);
+    }
+    setDemoDeploymentStateProvisioned(id) {
+        return this.updateDeploymentStatus(id, 'success', constants_1.DEMO_STATES.provisioned);
+    }
+    setDemoDeploymentStateErrored(id) {
+        return this.updateDeploymentStatus(id, 'error', constants_1.DEMO_STATES.error);
+    }
+    updateDeploymentStatus(id, state, description, logUrl) {
+        const payload = {
             ...this.repo,
             deployment_id: id,
             state: state,
             auto_inactive: true,
+            description: description !== null && description !== void 0 ? description : '',
             mediaType: {
                 previews: ['ant-man', 'flash'],
             },
-        }).then(resp => {
+        };
+        if (logUrl) {
+            payload['log_url'] = logUrl;
+        }
+        return this.github.repos.createDeploymentStatus(payload)
+            .then(resp => {
             if (resp.status !== 201) {
                 throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
             }
@@ -236,6 +262,45 @@ class GitHubDeploymentManager {
             return resp.data.map(label => label.name);
         }).catch(() => {
             return [];
+        });
+    }
+    addIssueLabels(issueId, ...label) {
+        return this.github.issues.addLabels({
+            ...this.repo,
+            issue_number: issueId,
+            labels: label
+        }).then(resp => {
+            if (resp.status === 200) {
+                return true;
+            }
+            else if (resp.status === 410) {
+                return false;
+            }
+            else {
+                throw new Error(`Unexpected status code ${resp.status} when adding labels to issue ${issueId}`);
+            }
+        });
+    }
+    removeIssueLabels(issueId, ...label) {
+        const promises = [];
+        label.forEach(label => {
+            const promise = this.github.issues.removeLabel({
+                ...this.repo,
+                issue_number: issueId,
+                name: label
+            })
+                .catch(err => {
+                // Ignore errors that prove the label is not there
+                if (err.status !== 404 && err.status !== 410) {
+                    throw err;
+                }
+            }).then(() => {
+                return true;
+            });
+            promises.push(promise);
+        });
+        return Promise.all(promises).then(results => {
+            return true;
         });
     }
     extractDemoDeploymentsFromResponse(resp) {
@@ -383,8 +448,18 @@ async function exec() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEMO_DEPLOYMENT_TASK = void 0;
+exports.DEMO_STATES = exports.DEMO_DEPLOYMENT_TASK = void 0;
 exports.DEMO_DEPLOYMENT_TASK = 'demo:deployment';
+exports.DEMO_STATES = {
+    provisioning: 'demo::provisioning',
+    provisioned: 'demo::provisioned',
+    destroying: 'demo::destroying',
+    destroyed: 'demo::destroyed',
+    error: 'demo::error',
+    marked_hold: 'demo::lifecycle_hold',
+    marked_warning: 'demo::lifecycle_warning',
+    marked_termination: 'demo::lifecycle_terminate',
+};
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
@@ -440,9 +515,11 @@ function getGitHubToken() {
 }
 exports.getGitHubToken = getGitHubToken;
 function getRepository() {
+    let repoOwner = process.env['GITHUB_REPO_OWNER'];
+    let repoName = process.env['GITHUB_REPO_NAME'];
     return {
-        owner: 'peter-murray',
-        repo: 'github-demo-payload-action'
+        owner: repoOwner || 'peter-murray',
+        repo: repoName || 'github-demo-payload-action',
     };
 }
 exports.getRepository = getRepository;
@@ -4647,7 +4724,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }, {
-      deprecated: "octokit.reactions.deleteLegacy() is deprecated, see https://docs.github.com/rest/reference/reactions/#delete-a-reaction-legacy"
+      deprecated: "octokit.rest.reactions.deleteLegacy() is deprecated, see https://docs.github.com/rest/reference/reactions/#delete-a-reaction-legacy"
     }],
     listForCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", {
       mediaType: {
@@ -4714,7 +4791,7 @@ const Endpoints = {
     createDeploymentStatus: ["POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"],
     createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
     createForAuthenticatedUser: ["POST /user/repos"],
-    createFork: ["POST /repos/{owner}/{repo}/forks{?org,organization}"],
+    createFork: ["POST /repos/{owner}/{repo}/forks"],
     createInOrg: ["POST /orgs/{org}/repos"],
     createOrUpdateEnvironment: ["PUT /repos/{owner}/{repo}/environments/{environment_name}"],
     createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
@@ -5024,7 +5101,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.0.0";
+const VERSION = "5.0.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -5361,7 +5438,7 @@ var pluginRequestLog = __nccwpck_require__(8883);
 var pluginPaginateRest = __nccwpck_require__(4193);
 var pluginRestEndpointMethods = __nccwpck_require__(3044);
 
-const VERSION = "18.5.2";
+const VERSION = "18.5.3";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.legacyRestEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`

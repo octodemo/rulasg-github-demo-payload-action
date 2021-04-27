@@ -32,9 +32,12 @@ export function getGitHubToken(): string {
 }
 
 export function getRepository() {
+  let repoOwner = process.env['GITHUB_REPO_OWNER'];
+  let repoName = process.env['GITHUB_REPO_NAME'];
+
   return {
-    owner: 'peter-murray',
-    repo: 'github-demo-payload-action'
+    owner: repoOwner || 'peter-murray',
+    repo: repoName || 'github-demo-payload-action',
   };
 }
 

@@ -92,105 +92,6 @@ exports.DemoDeployment = DemoDeployment;
 
 /***/ }),
 
-/***/ 5233:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DemoPayload = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const util_1 = __nccwpck_require__(4024);
-class DemoPayload {
-    constructor(target, template, user, issue) {
-        this.target = target;
-        this.template = template;
-        this.user = user || github.context.actor;
-        if (issue) {
-            this.linkedIssueId = parseInt(issue);
-        }
-    }
-    async validate(octokit) {
-        this.validation = {
-            templateExists: await util_1.repositoryExists(octokit, this.template.repo),
-            templateRefExists: await util_1.repositoryBranchExists(octokit, this.template.repo, this.template.ref),
-            targetRepoExists: await util_1.repositoryExists(octokit, this.target),
-        };
-        return this.validation;
-    }
-    getTerraformVariables() {
-        const result = {
-            github_context: {
-                actor: this.user,
-                template_repository: {
-                    ...this.template.repo,
-                    ref: this.template.ref,
-                },
-                target_repository: {
-                    ...this.target
-                },
-            },
-            azure_context: {},
-            gcp_context: {},
-            aws_context: {},
-        };
-        if (this.linkedIssueId) {
-            result.github_context['tracking_issue'] = { id: this.linkedIssueId };
-        }
-        return result;
-    }
-    getOutputs() {
-        const result = {};
-        result['template_repository_full_name'] = `${this.template.repo.owner}/${this.template.repo.repo}`;
-        result['template_repository_owner'] = this.template.repo.owner;
-        result['template_repository_name'] = this.template.repo.repo;
-        result['template_repository_ref'] = this.template.ref || '';
-        result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
-        result['repository_owner'] = this.target.owner;
-        result['repository_name'] = this.target.repo;
-        if (this.linkedIssueId) {
-            result['tracking_issue'] = this.linkedIssueId;
-        }
-        if (this.validation) {
-            result['validation_template_repository_exists'] = this.validation.templateExists;
-            result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-            result['validation_repository_exists'] = this.validation.targetRepoExists;
-        }
-        result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`;
-        return result;
-    }
-    setActionsOutputs() {
-        const outputs = this.getOutputs();
-        Object.keys(outputs).forEach(key => {
-            core.setOutput(key, outputs[key]);
-        });
-    }
-}
-exports.DemoPayload = DemoPayload;
-//# sourceMappingURL=DemoPayload.js.map
-
-/***/ }),
-
 /***/ 3541:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -448,7 +349,7 @@ function createDeploymentStatus(status) {
 
 /***/ }),
 
-/***/ 5351:
+/***/ 5413:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -477,7 +378,6 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const util_1 = __nccwpck_require__(1669);
 const constants_1 = __nccwpck_require__(5105);
-const DemoPayload_1 = __nccwpck_require__(5233);
 const GitHubDeploymentManager_1 = __nccwpck_require__(3541);
 const util_2 = __nccwpck_require__(4024);
 async function run() {
@@ -492,58 +392,67 @@ async function run() {
 run();
 async function exec() {
     const inputs = {
-        template: {
-            repo: {
-                owner: util_2.getRequiredInput('template_repository_owner'),
-                repo: util_2.getRequiredInput('template_repository_name'),
-            },
-            ref: core.getInput('template_repository_ref'),
-        },
-        target: {
-            owner: util_2.getRequiredInput('repository_owner'),
-            repo: util_2.getRequiredInput('repository_name'),
-        },
-        user: core.getInput('user'),
-        issue: core.getInput('issue_id'),
-        prevent_duplicates: !!core.getInput('prevent_duplicates')
+        name: core.getInput('name'),
+        id: parseInt(core.getInput('id')),
+        run_id: util_2.getRequiredInput('actions_run_id'),
+        status: util_2.getRequiredInput('status')
     };
-    const octokit = util_2.getOctokit();
-    const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-    const payload = new DemoPayload_1.DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue);
-    const validation = await payload.validate(octokit);
-    if (inputs.prevent_duplicates) {
-        if (validation.targetRepoExists) {
-            try {
-                if (inputs.issue) {
-                    await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
-                }
-            }
-            catch (err) {
-                core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
-            }
-            finally {
-                throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
-            }
+    if (!!inputs.name && !!inputs.id) {
+        core.setFailed(`One of 'name' or 'id' must be provided to update a demo deployment state.`);
+    }
+    else {
+        const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, util_2.getOctokit(), github.context.ref);
+        let deployment = await getDeployment(deploymentManager, inputs);
+        const state = validateStatus(inputs.status);
+        const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
+        core.info(`Updating demo deployment ${deployment.id} status...`);
+        await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
+        core.info('done.');
+        const issueId = deployment.getTrackingIssue();
+        if (issueId) {
+            core.info(`Updating issue ${issueId} labels to track state...`);
+            await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
+            await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
+            core.info('done.');
         }
     }
-    // Provide the outputs to the workflow
-    payload.setActionsOutputs();
-    // Create the demo deployment on the repository for the provisioning
-    const demoDeployment = await deploymentManager.createDemoDeployment(`${inputs.target.owner}/${inputs.target.repo}`, payload.getTerraformVariables());
-    core.setOutput('demo_deployment_id', demoDeployment.id);
-    // Show the demo deployment in progress
-    await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', constants_1.DEMO_STATES.provisioning);
-    core.startGroup('Demo Deployment');
-    core.info(`id = ${demoDeployment.id}`);
-    core.endGroup();
-    core.startGroup('Action outputs');
-    core.info(JSON.stringify(payload.getOutputs(), null, 2));
-    core.endGroup();
-    core.startGroup('Terraform variables');
-    core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
-    core.endGroup();
 }
-//# sourceMappingURL=create-demo-definition.js.map
+function validateStatus(status) {
+    if (status === 'success') {
+        return {
+            deploymentState: 'success',
+            demoState: constants_1.DEMO_STATES.provisioned,
+            labelsAdd: [constants_1.DEMO_STATES.provisioned],
+            labelsRemove: [constants_1.DEMO_STATES.provisioning, constants_1.DEMO_STATES.error],
+        };
+    }
+    else if (status === 'failure' || status === 'cancelled') {
+        return {
+            deploymentState: 'failure',
+            demoState: constants_1.DEMO_STATES.error,
+            labelsAdd: [constants_1.DEMO_STATES.error],
+            labelsRemove: [constants_1.DEMO_STATES.provisioning, constants_1.DEMO_STATES.provisioned, constants_1.DEMO_STATES.destroying, constants_1.DEMO_STATES.destroyed],
+        };
+    }
+    else {
+        throw new Error(`Unsupported status type provided '${status}'`);
+    }
+}
+async function getDeployment(deploymentManager, inputs) {
+    let deployment;
+    if (inputs.name) {
+        const result = await deploymentManager.getDemoDeployment(inputs.name);
+        if (!result) {
+            throw new Error(`Failed to locate demo deployment for name '${inputs.name}'`);
+        }
+        deployment = result;
+    }
+    else {
+        deployment = await deploymentManager.getDemoDeploymentById(inputs.id);
+    }
+    return deployment;
+}
+//# sourceMappingURL=demo-provisioning-status.js.map
 
 /***/ }),
 
@@ -8008,7 +7917,7 @@ module.exports = require("zlib");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(5351);
+/******/ 	return __nccwpck_require__(5413);
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

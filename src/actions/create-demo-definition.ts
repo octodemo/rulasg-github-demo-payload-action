@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { DEMO_STATES } from '../constants';
 import { DemoPayload } from '../DemoPayload';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { getOctokit, getRequiredInput } from '../util';
@@ -43,11 +44,7 @@ async function exec() {
     if (validation.targetRepoExists) {
       try {
         if (inputs.issue) {
-          await octokit.issues.addLabels({
-            ...github.context.repo,
-            issue_number: parseInt(inputs.issue),
-            labels: ['duplicate']
-          });
+          await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
         }
       } catch (err) {
         core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
@@ -68,7 +65,7 @@ async function exec() {
   core.setOutput('demo_deployment_id', demoDeployment.id);
 
   // Show the demo deployment in progress
-  await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress');
+  await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', DEMO_STATES.provisioning);
 
   core.startGroup('Demo Deployment')
   core.info(`id = ${demoDeployment.id}`);

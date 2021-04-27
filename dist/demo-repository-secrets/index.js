@@ -140,9 +140,11 @@ function getGitHubToken() {
 }
 exports.getGitHubToken = getGitHubToken;
 function getRepository() {
+    let repoOwner = process.env['GITHUB_REPO_OWNER'];
+    let repoName = process.env['GITHUB_REPO_NAME'];
     return {
-        owner: 'peter-murray',
-        repo: 'github-demo-payload-action'
+        owner: repoOwner || 'peter-murray',
+        repo: repoName || 'github-demo-payload-action',
     };
 }
 exports.getRepository = getRepository;
@@ -2289,7 +2291,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }, {
-      deprecated: "octokit.reactions.deleteLegacy() is deprecated, see https://docs.github.com/rest/reference/reactions/#delete-a-reaction-legacy"
+      deprecated: "octokit.rest.reactions.deleteLegacy() is deprecated, see https://docs.github.com/rest/reference/reactions/#delete-a-reaction-legacy"
     }],
     listForCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", {
       mediaType: {
@@ -2356,7 +2358,7 @@ const Endpoints = {
     createDeploymentStatus: ["POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"],
     createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
     createForAuthenticatedUser: ["POST /user/repos"],
-    createFork: ["POST /repos/{owner}/{repo}/forks{?org,organization}"],
+    createFork: ["POST /repos/{owner}/{repo}/forks"],
     createInOrg: ["POST /orgs/{org}/repos"],
     createOrUpdateEnvironment: ["PUT /repos/{owner}/{repo}/environments/{environment_name}"],
     createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
@@ -2666,7 +2668,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.0.0";
+const VERSION = "5.0.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -3003,7 +3005,7 @@ var pluginRequestLog = __nccwpck_require__(883);
 var pluginPaginateRest = __nccwpck_require__(193);
 var pluginRestEndpointMethods = __nccwpck_require__(44);
 
-const VERSION = "18.5.2";
+const VERSION = "18.5.3";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.legacyRestEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`

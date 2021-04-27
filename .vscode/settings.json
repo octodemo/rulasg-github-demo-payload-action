@@ -25,5 +25,6 @@
     "editor.codeActionsOnSave": {
       "source.fixAll": true,
       "source.organizeImports": true,
-    }
+    },
+    "workbench.colorTheme": "GitHub Dark Dimmed"
   }

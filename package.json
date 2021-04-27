@@ -5,11 +5,14 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
-    "build:create-demo-definition": "npm run build && ncc build lib/actions/create-demo-definition.js -o dist/create-demo-definition --source-map",
-    "build:extract-demo-definition": "npm run build && ncc build lib/actions/extract-demo-definition.js -o dist/extract-demo-definition --source-map",
-    "build:deactivate-demo-definition": "npm run build && ncc build lib/actions/deactivate-demo-definition.js -o dist/deactivate-demo-definition --source-map",
-    "build:demo-repository-secrets": "npm run build && ncc build lib/actions/demo-repository-secrets.js -o dist/demo-repository-secrets --source-map",
-    "package": "npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition",
+    "build:create-demo-definition": "ncc build lib/actions/create-demo-definition.js -o dist/create-demo-definition --source-map",
+    "build:extract-demo-definition": "ncc build lib/actions/extract-demo-definition.js -o dist/extract-demo-definition --source-map",
+    "build:deactivate-demo-definition": "ncc build lib/actions/deactivate-demo-definition.js -o dist/deactivate-demo-definition --source-map",
+    "build:demo-repository-secrets": "ncc build lib/actions/demo-repository-secrets.js -o dist/demo-repository-secrets --source-map",
+    "build:update-issue-labels": "ncc build lib/actions/update-issue-labels.js -o dist/update-issue-labels --source-map",
+    "build:demo-provisioning-status": "ncc build lib/actions/demo-provisioning-status.js -o dist/demo-provisioning-status --source-map",
+    "build:demo-deprovisioning-status": "ncc build lib/actions/demo-deprovisioning-status.js -o dist/demo-deprovisioning-status --source-map",
+    "package": "npm run build && npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-deprovisioning-status",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
@@ -26,11 +29,11 @@
   "dependencies": {
     "@actions/core": "^1.2.7",
     "@actions/github": "^4.0.0",
-    "@octokit/rest": "^18.5.2"
+    "@octokit/rest": "^18.5.3"
   },
   "devDependencies": {
     "@types/mocha": "^8.2.2",
-    "@types/node": "^14.14.41",
+    "@types/node": "^14.14.42",
     "@vercel/ncc": "^0.27.0",
     "chai": "^4.3.4",
     "mocha": "^8.3.2",

@@ -9,7 +9,6 @@ type Secrets = {
 }
 
 
-
 async function run() {
   try {
     await exec();
@@ -37,7 +36,6 @@ async function exec() {
     core.endGroup();
 
     const data = JSON.parse(contents.toString('utf-8'));
-
     const payload: Secrets = {};
 
     if (data.organization) {

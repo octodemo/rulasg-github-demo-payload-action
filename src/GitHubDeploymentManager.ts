@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { DEMO_DEPLOYMENT_TASK } from './constants';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
 import { DemoDeployment } from './DemoDeployment';
 import { GitHubDeployment, DeploymentState, DeploymentStatus, Repository } from './types';
 
@@ -112,6 +112,18 @@ export class GitHubDeploymentManager {
       });
   }
 
+  getDemoDeploymentById(id: number): Promise<DemoDeployment> {
+    return this.github.repos.getDeployment({
+      ...this.repo,
+      deployment_id: id,
+    }).then(resp => {
+      if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
+        throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
+      }
+      return this.extractDemoDeployment(resp.data);
+    });
+  }
+
   createDemoDeployment(name: string,  payload: {[key: string]: any }): Promise<DemoDeployment> {
     return this.github.repos.createDeployment({
       ...this.repo,
@@ -131,16 +143,36 @@ export class GitHubDeploymentManager {
     });
   }
 
-  updateDeploymentStatus(id: number, state: DeploymentState): Promise<DeploymentStatus> {
-    return this.github.repos.createDeploymentStatus({
+  setDemoDeploymentStateProvisioning(id: number): Promise<DeploymentStatus> {
+    return this.updateDeploymentStatus(id, 'in_progress', DEMO_STATES.provisioning);
+  }
+
+  setDemoDeploymentStateProvisioned(id: number): Promise<DeploymentStatus> {
+    return this.updateDeploymentStatus(id, 'success', DEMO_STATES.provisioned);
+  }
+
+  setDemoDeploymentStateErrored(id: number) {
+    return this.updateDeploymentStatus(id, 'error', DEMO_STATES.error);
+  }
+
+  updateDeploymentStatus(id: number, state: DeploymentState, description?: string, logUrl?: string): Promise<DeploymentStatus> {
+    const payload = {
       ...this.repo,
       deployment_id: id,
       state: state,
       auto_inactive: true,
+      description: description ?? '',
       mediaType: {
         previews: ['ant-man', 'flash'],
       },
-    }).then(resp => {
+    };
+
+    if (logUrl) {
+      payload['log_url'] = logUrl;
+    }
+
+    return this.github.repos.createDeploymentStatus(payload)
+      .then(resp => {
       if (resp.status !== 201) {
         throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
       }
@@ -158,6 +190,48 @@ export class GitHubDeploymentManager {
     }).catch(() => {
       return [];
     })
+  }
+
+  addIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
+    return this.github.issues.addLabels({
+      ...this.repo,
+      issue_number: issueId,
+      labels: label
+    }).then(resp => {
+      if (resp.status === 200) {
+        return true;
+      } else if (resp.status === 410) {
+        return false;
+      } else {
+        throw new Error(`Unexpected status code ${resp.status} when adding labels to issue ${issueId}`);
+      }
+    });
+  }
+
+  removeIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
+    const promises: Promise<boolean>[] = [];
+
+    label.forEach(label => {
+      const promise = this.github.issues.removeLabel({
+        ...this.repo,
+        issue_number: issueId,
+        name: label
+      })
+      .catch(err => {
+        // Ignore errors that prove the label is not there
+        if (err.status !== 404 && err.status !== 410) {
+          throw err;
+        }
+      }).then(() => {
+        return true;
+      });
+
+      promises.push(promise);
+    })
+
+    return Promise.all(promises).then(results => {
+      return true;
+    });
   }
 
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
