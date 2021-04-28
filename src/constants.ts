@@ -9,7 +9,7 @@ export const DEMO_STATES = {
 
   error: 'demo::error',
 
-  marked_hold: 'demo::hold',
+  marked_hold: 'demo::lifecycle_hold',
   marked_warning: 'demo::lifecycle_warning',
   marked_termination: 'demo::lifecycle_terminate',
 }

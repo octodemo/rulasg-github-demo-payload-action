@@ -1,5 +1,5 @@
-name: demo-provisioning-status
-description: Updates the status of a demo deployment
+name: demo-lifecycle-status
+description: Updates the lifecycle status of a demo deployment
 author: Peter Murray
 
 inputs:
@@ -10,19 +10,17 @@ inputs:
 
   id:
     description: The id of the demo deployment
-
-  name:
-    description: The name of the demo deployment
+    required: true
 
   actions_run_id:
     description: The run id for the actions workflow
     default: ${{ github.run_id }}
     required: true
 
-  status:
-    description: The workflow status, 'success', 'failed' or 'cancelled'
+  lifecycle_status:
+    description: The demo lifecycle status, 'demo::lifecycle_hold', 'demo::lifecycle_warning', 'demo::lifecycle_terminate'
     required: true
 
 runs:
   using: node12
-  main: '../dist/demo-provisioning-status/index.js'
+  main: '../dist/demo-lifecycle-status/index.js'

@@ -23,8 +23,7 @@ async function exec() {
     name: core.getInput('name'),
     id: parseInt(core.getInput('id')),
     run_id: getRequiredInput('actions_run_id'),
-    status: getRequiredInput('status'),
-    description: core.getInput('description'),
+    status: getRequiredInput('status')
   };
 
   if (!!inputs.name && !!inputs.id) {
@@ -33,7 +32,7 @@ async function exec() {
     const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
     let deployment = await getDeployment(deploymentManager, inputs);
 
-    const state = validateStatus(inputs.status, inputs.description);
+    const state = validateStatus(inputs.status);
     const logUrl = `https://github.com/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
@@ -57,23 +56,14 @@ type DemoStatus = {
   labelsRemove: string[],
 };
 
-function validateStatus(status: string, description?: string): DemoStatus {
+function validateStatus(status: string): DemoStatus {
   if (status === 'success') {
-    if (description === DEMO_STATES.marked_hold) {
-      return {
-        deploymentState: 'success',
-        demoState: DEMO_STATES.marked_hold,
-        labelsAdd: [DEMO_STATES.marked_hold],
-        labelsRemove: [],
-      };
-    } else {
-      return {
-        deploymentState: 'success',
-        demoState: DEMO_STATES.provisioned,
-        labelsAdd: [DEMO_STATES.provisioned],
-        labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.error],
-      };
-    }
+    return {
+      deploymentState: 'success',
+      demoState: DEMO_STATES.provisioned,
+      labelsAdd: [DEMO_STATES.provisioned],
+      labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.error],
+    };
   } else if (status === 'failure' || status === 'cancelled') {
     return {
       deploymentState: 'failure',

@@ -434,7 +434,7 @@ exports.DEMO_STATES = {
     destroying: 'demo::destroying',
     destroyed: 'demo::destroyed',
     error: 'demo::error',
-    marked_hold: 'demo::hold',
+    marked_hold: 'demo::lifecycle_hold',
     marked_warning: 'demo::lifecycle_warning',
     marked_termination: 'demo::lifecycle_terminate',
 };
