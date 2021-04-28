@@ -6,10 +6,10 @@ import { DeploymentState, DeploymentStatus, Repository } from "./types";
 
 export type DemoReview = {
   demo: DemoDeployment,
-  active_days: number,
+  days_in_state: number,
   in_error: boolean,
   status?: DeploymentState,
-  description?: string,
+  lifecycle_state?: string,
   log_url?: string,
   issue?: {
     id: number,
@@ -48,6 +48,21 @@ export class DemoDeploymentReview {
     return this.load();
   }
 
+  async getDemosToTerminate(gracePeriod: number = 5): Promise<DemoReview[]> {
+    const reviews: DemoReview[] = await this.loadDemoReviews();
+    const results: DemoReview[] = [];
+
+    reviews.forEach(review => {
+      if (review.lifecycle_state === DEMO_STATES.marked_termination) {
+        if (review.days_in_state > gracePeriod) {
+          results.push(review);
+        }
+      }
+    })
+
+    return results;
+  }
+
   async analyze(warningDays: number = 7, maxActiveDays: number = 15): Promise<AnalysisResults> {
     const reviews: DemoReview[] = await this.loadDemoReviews();
 
@@ -60,21 +75,20 @@ export class DemoDeploymentReview {
     };
 
     reviews.forEach(review => {
-      // console.log(`Review: ${review.demo.name}`);
       if (review.in_error) {
         results.errored.push(review);
       }
 
-      if (review.description === DEMO_STATES.marked_hold) {
+      if (review.lifecycle_state === DEMO_STATES.marked_hold) {
         results.on_hold.push(review);
       } else {
-        const demoActiveDays = review.active_days;
+        const daysInState = review.days_in_state;
 
-        if (demoActiveDays > warningDays) {
+        if (daysInState > warningDays && review.lifecycle_state !== DEMO_STATES.marked_warning) {
           results.to_warn.push(review);
         }
 
-        if (demoActiveDays > maxActiveDays) {
+        if (daysInState > maxActiveDays&& review.lifecycle_state !== DEMO_STATES.marked_termination) {
           results.to_terminate.push(review);
         }
       }
@@ -102,10 +116,10 @@ export class DemoDeploymentReview {
 
     const result: DemoReview = {
       demo: demo,
-      active_days: demoActiveDays,
+      days_in_state: demoActiveDays,
       status: status?.state,
       in_error: status?.state !== 'success',
-      description: status?.description,
+      lifecycle_state: status?.description,
       log_url: status?.log_url,
     };
 

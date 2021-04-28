@@ -79,7 +79,7 @@ function getIssueNumber(): number {
 }
 
 function getLabels(name): string[] {
-  const labelsInput = getRequiredInput(name);
+  const labelsInput = core.getInput(name);
 
   if (labelsInput) {
     const values = labelsInput.split(',');

@@ -471,7 +471,7 @@ function createDeploymentStatus(status) {
 
 /***/ }),
 
-/***/ 3678:
+/***/ 8503:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -512,22 +512,11 @@ async function run() {
 }
 run();
 async function exec() {
-    const warningActiveDays = parseInt(util_2.getRequiredInput('warn_active_days'));
-    const maxActiveDays = parseInt(util_2.getRequiredInput('terminate_active_days'));
+    const gracePeriod = parseInt(util_2.getRequiredInput('grace_period'));
     const demoReview = await DemoDeploymentReview_1.DemoDeploymentReview.createDemoReview(util_2.getOctokit(), github.context.repo, github.context.ref);
-    const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
-    core.info(`Demo deployment analysis`);
-    reportErrors(analysis.errored);
-    reportWarnings(analysis.to_warn);
-    reportTerminations(analysis.to_terminate);
-    core.startGroup('outputs');
-    setOutput('deployments_to_warn', analysis.to_warn);
-    setOutput('deployments_to_terminate', analysis.to_terminate);
-    core.endGroup();
-}
-function setOutputValue(name, value) {
-    core.info(`${name}=${value}`);
-    core.setOutput(name, value);
+    const toTerminate = await demoReview.getDemosToTerminate(gracePeriod);
+    reportTerminations(toTerminate);
+    setOutput('terminations', toTerminate);
 }
 function setOutput(name, reviews) {
     setOutputValue(`${name}_count`, reviews ? reviews.length : 0);
@@ -541,22 +530,12 @@ function setOutput(name, reviews) {
         setOutputValue(`${name}_json`, JSON.stringify(payload));
     }
 }
+function setOutputValue(name, value) {
+    core.info(`${name}=${value}`);
+    core.setOutput(name, value);
+}
 function reportTerminations(reviews) {
     core.startGroup(`Terminations - ${reviews ? reviews.length : 0}`);
-    reviews === null || reviews === void 0 ? void 0 : reviews.forEach((review) => {
-        displayDemoReview(review);
-    });
-    core.endGroup();
-}
-function reportWarnings(reviews) {
-    core.startGroup(`Warnings - ${reviews ? reviews.length : 0}`);
-    reviews === null || reviews === void 0 ? void 0 : reviews.forEach((review) => {
-        displayDemoReview(review);
-    });
-    core.endGroup();
-}
-function reportErrors(reviews) {
-    core.startGroup(`Errors - ${reviews ? reviews.length : 0}`);
     reviews === null || reviews === void 0 ? void 0 : reviews.forEach((review) => {
         displayDemoReview(review);
     });
@@ -576,7 +555,7 @@ function displayDemoReview(review) {
         core.info(`    url: https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/issues/${review.issue.id}`);
     }
 }
-//# sourceMappingURL=review-demo-deployments.js.map
+//# sourceMappingURL=get-demos-to-terminate.js.map
 
 /***/ }),
 
@@ -8047,7 +8026,7 @@ module.exports = require("zlib");;
 /******/ 	// module exports must be returned from runtime so entry inlining is disabled
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(3678);
+/******/ 	return __nccwpck_require__(8503);
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map

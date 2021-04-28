@@ -54,6 +54,12 @@ class DemoDeployment {
             return false;
         });
     }
+    async isMarkedForTermination() {
+        return this.getCurrentStatus()
+            .then(status => {
+            return (status === null || status === void 0 ? void 0 : status.state) === 'success' && (status === null || status === void 0 ? void 0 : status.description) === constants_1.DEMO_STATES.marked_termination;
+        });
+    }
     async getActiveDays() {
         const isActive = await this.isActive();
         if (isActive) {

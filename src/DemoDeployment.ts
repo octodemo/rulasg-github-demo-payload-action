@@ -1,4 +1,4 @@
-import { DEMO_DEPLOYMENT_TASK } from './constants';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
 import { GitHubDeploymentManager } from './GitHubDeploymentManager';
 import { DemoPayloadContext, GitHubDeployment, DeploymentStatus } from './types';
 
@@ -35,7 +35,7 @@ export class DemoDeployment {
     return this.data.environment;
   }
 
-  get payload(): DemoPayloadContext | undefined  {
+  get payload(): DemoPayloadContext | undefined {
     return this.data.payload;
   }
 
@@ -53,12 +53,19 @@ export class DemoDeployment {
 
   async isErrored(): Promise<boolean> {
     return this.getCurrentStatus()
-    .then(status => {
-      if (status) {
-        return status.state === 'failure' || status.state === 'error';
-      }
-      return false;
-    });
+      .then(status => {
+        if (status) {
+          return status.state === 'failure' || status.state === 'error';
+        }
+        return false;
+      });
+  }
+
+  async isMarkedForTermination(): Promise<boolean> {
+    return this.getCurrentStatus()
+      .then(status => {
+        return status?.state === 'success' && status?.description === DEMO_STATES.marked_termination;
+      });
   }
 
   async getActiveDays(): Promise<number> {
@@ -73,8 +80,8 @@ export class DemoDeployment {
     return this.getCurrentStatus().then(status => {
       if (status) {
         const now = Date.now()
-        ,  updated = new Date(status.created_at).getTime()
-        ;
+          , updated = new Date(status.created_at).getTime()
+          ;
         return Math.floor((now - updated) / DAY_IN_MILLISECONDS);
       }
 

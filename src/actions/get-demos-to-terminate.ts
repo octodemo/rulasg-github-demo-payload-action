@@ -16,26 +16,12 @@ run();
 
 
 async function exec() {
-  const warningActiveDays: number = parseInt(getRequiredInput('warn_active_days'));
-  const maxActiveDays: number = parseInt(getRequiredInput('terminate_active_days'));
-
+  const gracePeriod: number = parseInt(getRequiredInput('grace_period'));
   const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
-  const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
+  const toTerminate: DemoReview[] = await demoReview.getDemosToTerminate(gracePeriod);
 
-  core.info(`Demo deployment analysis`);
-  reportErrors(analysis.errored);
-  reportWarnings(analysis.to_warn);
-  reportTerminations(analysis.to_terminate);
-
-  core.startGroup('outputs');
-  setOutput('deployments_to_warn', analysis.to_warn);
-  setOutput('deployments_to_terminate', analysis.to_terminate);
-  core.endGroup();
-}
-
-function setOutputValue(name, value) {
-  core.info(`${name}=${value}`);
-  core.setOutput(name, value);
+  reportTerminations(toTerminate);
+  setOutput('terminations', toTerminate);
 }
 
 function setOutput(name, reviews?: DemoReview[]) {
@@ -54,28 +40,13 @@ function setOutput(name, reviews?: DemoReview[]) {
   }
 }
 
+function setOutputValue(name, value) {
+  core.info(`${name}=${value}`);
+  core.setOutput(name, value);
+}
+
 function reportTerminations(reviews?: DemoReview[]) {
   core.startGroup(`Terminations - ${reviews ? reviews.length : 0}`);
-
-  reviews?.forEach((review: DemoReview) => {
-    displayDemoReview(review);
-  });
-
-  core.endGroup();
-}
-
-function reportWarnings(reviews?: DemoReview[]) {
-  core.startGroup(`Warnings - ${reviews ? reviews.length : 0}`);
-
-  reviews?.forEach((review: DemoReview) => {
-    displayDemoReview(review);
-  });
-
-  core.endGroup();
-}
-
-function reportErrors(reviews?: DemoReview[]) {
-  core.startGroup(`Errors - ${reviews ? reviews.length : 0}`);
 
   reviews?.forEach((review: DemoReview) => {
     displayDemoReview(review);

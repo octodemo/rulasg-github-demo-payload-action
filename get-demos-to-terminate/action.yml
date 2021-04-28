@@ -1,0 +1,23 @@
+name: 'GitHub Demo Deployments - terminate'
+description: Locates the demo deployments that need to be terminated
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use
+    default: ${{ github.token }}
+
+  grace_period:
+    description: The number of days grace between termination warning and actual destruction
+    default: 5
+
+outputs:
+  terminate_json:
+    description: The deployments to terminate
+
+  terminate_count:
+    description: The number of deployments to terminate
+
+runs:
+  using: node12
+  main: '../dist/get-demos-to-terminate/index.js'
