@@ -15,10 +15,18 @@ inputs:
     description: The number of active days before the repository will be terminated
     default: 15
 
-  dry_run:
-    description: Flag indicating whether or not to modify deployments
-    default: true
-    required: true
+outputs:
+  deployments_to_warn_json:
+    description: The deployments to warn on
+
+  deployments_to_warn_count:
+    description: The number of deployments to warn on
+
+  deployments_to_terminate_json:
+    description: The deployments to terminate
+
+  deployments_to_terminate_count:
+    description: The number of deployments to terminate
 
 runs:
   using: node12

@@ -18,23 +18,32 @@ run();
 async function exec() {
   const warningActiveDays: number = parseInt(getRequiredInput('warn_active_days'));
   const maxActiveDays: number = parseInt(getRequiredInput('terminate_active_days'));
-  const dryRun: boolean = getRequiredInput('dry_run') === 'true';
 
   const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
   const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
 
-  core.startGroup(`Demo deployment analysis`);
-
+  core.info(`Demo deployment analysis`);
   reportErrors(analysis.errored);
   reportWarnings(analysis.to_warn);
   reportTerminations(analysis.to_terminate);
 
-  //TODO need to actually perform processing
-  if (!dryRun) {
-    core.info(`Would have processed the entries...`);
+  setOutput('deployments_to_warn', analysis.to_warn);
+  setOutput('deployments_to_terminate', analysis.to_terminate);
+}
+
+function setOutput(name, reviews?: DemoReview[]) {
+  if (reviews && reviews.length > 0) {
+    const payload = reviews.map(review => {
+      return {
+        id: review.demo.id,
+        name: review.demo.name,
+      };
+    });
+
+    core.setOutput(`${name}_json`, JSON.stringify(payload));
   }
 
-  core.endGroup();
+  core.setOutput(`${name}_count`, reviews ? reviews.length : 0);
 }
 
 function reportTerminations(reviews?: DemoReview[]) {
