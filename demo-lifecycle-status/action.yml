@@ -18,7 +18,7 @@ inputs:
     required: true
 
   lifecycle_status:
-    description: The demo lifecycle status, 'demo::lifecycle_hold', 'demo::lifecycle_warning', 'demo::lifecycle_terminate'
+    description: The demo lifecycle status, 'hold', 'warning', 'terminate', 'unhold'.
     required: true
 
 runs:

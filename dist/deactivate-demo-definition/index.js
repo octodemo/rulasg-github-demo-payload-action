@@ -426,7 +426,7 @@ async function exec() {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEMO_STATES = exports.DEMO_DEPLOYMENT_TASK = void 0;
+exports.LIFECYCLE_STATES = exports.DEMO_STATES = exports.DEMO_DEPLOYMENT_TASK = void 0;
 exports.DEMO_DEPLOYMENT_TASK = 'demo:deployment';
 exports.DEMO_STATES = {
     provisioning: 'demo::provisioning',
@@ -437,6 +437,12 @@ exports.DEMO_STATES = {
     marked_hold: 'demo::lifecycle_hold',
     marked_warning: 'demo::lifecycle_warning',
     marked_termination: 'demo::lifecycle_terminate',
+};
+exports.LIFECYCLE_STATES = {
+    hold: 'hold',
+    warning: 'warning',
+    termination: 'terminate',
+    unhold: 'unhold',
 };
 //# sourceMappingURL=constants.js.map
 

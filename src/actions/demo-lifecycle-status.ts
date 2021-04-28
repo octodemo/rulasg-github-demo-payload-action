@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DEMO_STATES } from '../constants';
+import { DEMO_STATES, LIFECYCLE_STATES } from '../constants';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { getOctokit, getRequiredInput } from '../util';
 
@@ -52,23 +52,29 @@ type DemoStatus = {
 };
 
 function validateStatus(status: string): DemoStatus {
-  if (status === DEMO_STATES.marked_hold) {
+  if (status === LIFECYCLE_STATES.hold) {
     return {
-      demoState: status,
+      demoState: DEMO_STATES.marked_hold,
       labelsAdd: [DEMO_STATES.marked_hold],
       labelsRemove: [DEMO_STATES.marked_warning, DEMO_STATES.marked_termination],
     };
-  } else if (status === DEMO_STATES.marked_termination) {
+  } else if (status === LIFECYCLE_STATES.termination) {
     return {
-      demoState: status,
+      demoState: DEMO_STATES.marked_termination,
       labelsAdd: [DEMO_STATES.marked_termination],
       labelsRemove: [],
     };
-  } else if (status === DEMO_STATES.marked_warning) {
+  } else if (status === LIFECYCLE_STATES.warning) {
     return {
-      demoState: status,
+      demoState: DEMO_STATES.marked_warning,
       labelsAdd: [DEMO_STATES.marked_warning],
       labelsRemove: [],
+    };
+  } else if (status === LIFECYCLE_STATES.unhold) {
+    return {
+      demoState: '',
+      labelsAdd: [],
+      labelsRemove: [DEMO_STATES.marked_hold],
     };
   } else {
     throw new Error(`Specified state '${status}' is not supported`);

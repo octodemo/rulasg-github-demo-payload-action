@@ -416,25 +416,32 @@ async function exec() {
     }
 }
 function validateStatus(status) {
-    if (status === constants_1.DEMO_STATES.marked_hold) {
+    if (status === constants_1.LIFECYCLE_STATES.hold) {
         return {
-            demoState: status,
+            demoState: constants_1.DEMO_STATES.marked_hold,
             labelsAdd: [constants_1.DEMO_STATES.marked_hold],
             labelsRemove: [constants_1.DEMO_STATES.marked_warning, constants_1.DEMO_STATES.marked_termination],
         };
     }
-    else if (status === constants_1.DEMO_STATES.marked_termination) {
+    else if (status === constants_1.LIFECYCLE_STATES.termination) {
         return {
-            demoState: status,
+            demoState: constants_1.DEMO_STATES.marked_termination,
             labelsAdd: [constants_1.DEMO_STATES.marked_termination],
             labelsRemove: [],
         };
     }
-    else if (status === constants_1.DEMO_STATES.marked_warning) {
+    else if (status === constants_1.LIFECYCLE_STATES.warning) {
         return {
-            demoState: status,
+            demoState: constants_1.DEMO_STATES.marked_warning,
             labelsAdd: [constants_1.DEMO_STATES.marked_warning],
             labelsRemove: [],
+        };
+    }
+    else if (status === constants_1.LIFECYCLE_STATES.unhold) {
+        return {
+            demoState: '',
+            labelsAdd: [],
+            labelsRemove: [constants_1.DEMO_STATES.marked_hold],
         };
     }
     else {
@@ -451,7 +458,7 @@ function validateStatus(status) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DEMO_STATES = exports.DEMO_DEPLOYMENT_TASK = void 0;
+exports.LIFECYCLE_STATES = exports.DEMO_STATES = exports.DEMO_DEPLOYMENT_TASK = void 0;
 exports.DEMO_DEPLOYMENT_TASK = 'demo:deployment';
 exports.DEMO_STATES = {
     provisioning: 'demo::provisioning',
@@ -462,6 +469,12 @@ exports.DEMO_STATES = {
     marked_hold: 'demo::lifecycle_hold',
     marked_warning: 'demo::lifecycle_warning',
     marked_termination: 'demo::lifecycle_terminate',
+};
+exports.LIFECYCLE_STATES = {
+    hold: 'hold',
+    warning: 'warning',
+    termination: 'terminate',
+    unhold: 'unhold',
 };
 //# sourceMappingURL=constants.js.map
 

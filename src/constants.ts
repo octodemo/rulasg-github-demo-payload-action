@@ -13,3 +13,10 @@ export const DEMO_STATES = {
   marked_warning: 'demo::lifecycle_warning',
   marked_termination: 'demo::lifecycle_terminate',
 }
+
+export const LIFECYCLE_STATES = {
+  hold: 'hold',
+  warning: 'warning',
+  termination: 'terminate',
+  unhold: 'unhold',
+}
