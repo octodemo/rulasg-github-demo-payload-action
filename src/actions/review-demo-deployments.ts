@@ -31,7 +31,15 @@ async function exec() {
   setOutput('deployments_to_terminate', analysis.to_terminate);
 }
 
+function setOutputValue(name, value) {
+  core.info(`setting output ${name}=${value}`);
+  core.setOutput(name, value);
+}
+
 function setOutput(name, reviews?: DemoReview[]) {
+  setOutputValue(`${name}_count`, reviews ? reviews.length : 0)
+
+
   if (reviews && reviews.length > 0) {
     const payload = reviews.map(review => {
       return {
@@ -40,10 +48,8 @@ function setOutput(name, reviews?: DemoReview[]) {
       };
     });
 
-    core.setOutput(`${name}_json`, JSON.stringify(payload));
+    setOutputValue(`${name}_json`, JSON.stringify(payload));
   }
-
-  core.setOutput(`${name}_count`, reviews ? reviews.length : 0);
 }
 
 function reportTerminations(reviews?: DemoReview[]) {
