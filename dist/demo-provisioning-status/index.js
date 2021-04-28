@@ -392,6 +392,7 @@ async function run() {
 }
 run();
 async function exec() {
+    var _a, _b;
     const inputs = {
         name: core.getInput('name'),
         id: parseInt(core.getInput('id')),
@@ -412,8 +413,12 @@ async function exec() {
         const issueId = deployment.getTrackingIssue();
         if (issueId) {
             core.info(`Updating issue ${issueId} labels to track state...`);
-            await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
-            await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
+            if (((_a = state === null || state === void 0 ? void 0 : state.labelsAdd) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+                await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
+            }
+            if (((_b = state === null || state === void 0 ? void 0 : state.labelsRemove) === null || _b === void 0 ? void 0 : _b.length) > 0) {
+                await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
+            }
             core.info('done.');
         }
     }

@@ -29,7 +29,7 @@ async function exec() {
 
   if (currentDeploymentState?.state === 'success') {
     const status = validateStatus(inputs.status);
-    const logUrl = `https://github.com/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
+    const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
     await deploymentManager.updateDeploymentStatus(deployment.id, 'success', status.demoState, logUrl);
@@ -38,8 +38,14 @@ async function exec() {
     const issueId = deployment.getTrackingIssue();
     if (issueId) {
       core.info(`Updating issue ${issueId} labels to track state...`);
-      await deploymentManager.addIssueLabels(issueId, ...status.labelsAdd);
-      await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
+
+      if (status?.labelsAdd?.length > 0) {
+        await deploymentManager.addIssueLabels(issueId, ...status.labelsAdd);
+      }
+
+      if (status?.labelsRemove?.length > 0) {
+        await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
+      }
       core.info('done.');
     }
   }

@@ -42,8 +42,13 @@ async function exec() {
     const issueId = deployment.getTrackingIssue();
     if (issueId) {
       core.info(`Updating issue ${issueId} labels to track state...`);
-      await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
-      await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
+      if (state?.labelsAdd?.length > 0) {
+        await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
+      }
+
+      if (state?.labelsRemove?.length > 0) {
+        await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
+      }
       core.info('done.');
     }
   }
