@@ -522,9 +522,11 @@ function setOutput(name, reviews) {
     setOutputValue(`${name}_count`, reviews ? reviews.length : 0);
     if (reviews && reviews.length > 0) {
         const payload = reviews.map(review => {
+            var _a;
             return {
                 id: review.demo.id,
                 name: review.demo.name,
+                repo: (_a = review.demo.payload) === null || _a === void 0 ? void 0 : _a.github_context.target_repository
             };
         });
         setOutputValue(`${name}_json`, JSON.stringify(payload));

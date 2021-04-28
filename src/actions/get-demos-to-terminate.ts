@@ -27,12 +27,12 @@ async function exec() {
 function setOutput(name, reviews?: DemoReview[]) {
   setOutputValue(`${name}_count`, reviews ? reviews.length : 0)
 
-
   if (reviews && reviews.length > 0) {
     const payload = reviews.map(review => {
       return {
         id: review.demo.id,
         name: review.demo.name,
+        repo: review.demo.payload?.github_context.target_repository
       };
     });
 
