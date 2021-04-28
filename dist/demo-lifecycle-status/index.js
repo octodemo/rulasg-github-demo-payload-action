@@ -303,6 +303,15 @@ class GitHubDeploymentManager {
             return true;
         });
     }
+    addIssueComment(id, comment) {
+        return this.github.issues.createComment({
+            ...this.repo,
+            issue_number: id,
+            body: comment,
+        }).then(resp => {
+            return resp.status === 201;
+        });
+    }
     extractDemoDeploymentsFromResponse(resp) {
         if (resp.status === 200 && resp.data && resp.data.length > 0) {
             const results = [];
@@ -392,7 +401,7 @@ async function run() {
 }
 run();
 async function exec() {
-    var _a, _b;
+    var _a, _b, _c;
     const inputs = {
         id: parseInt(util_2.getRequiredInput('id')),
         run_id: util_2.getRequiredInput('actions_run_id'),
@@ -416,9 +425,36 @@ async function exec() {
             if (((_b = status === null || status === void 0 ? void 0 : status.labelsRemove) === null || _b === void 0 ? void 0 : _b.length) > 0) {
                 await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
             }
+            const actor = (_c = deployment.payload) === null || _c === void 0 ? void 0 : _c.github_context.actor;
+            if (status.demoState === constants_1.DEMO_STATES.marked_warning) {
+                await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
+            }
+            else if (status.demoState === constants_1.DEMO_STATES.marked_termination) {
+                await deploymentManager.addIssueComment(issueId, getTerminationMessage(actor));
+            }
             core.info('done.');
         }
     }
+}
+function getWarningMessage(actor) {
+    let prefix = 'T';
+    if (actor) {
+        prefix = `:wave: @${actor}, t`;
+    }
+    return `${prefix}he demo has been open for a while now. Please consider closing this issue to remove the deployment environment if no longer required.`;
+}
+function getTerminationMessage(actor) {
+    let prefix = 'T';
+    if (actor) {
+        prefix = `:wave: @${actor}, t`;
+    }
+    return `
+  ${prefix}he demo has been open for a long time and is not marked for hold.
+
+  Please close this issue to release the resources, or place on hold if you need this environment to persist.
+
+  :red_circle: If you take no action the demo will be destroyed automatically. :red_circle:
+  `;
 }
 function validateStatus(status) {
     if (status === constants_1.LIFECYCLE_STATES.hold) {

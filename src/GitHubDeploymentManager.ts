@@ -234,6 +234,16 @@ export class GitHubDeploymentManager {
     });
   }
 
+  addIssueComment(id: number, comment: string): Promise<boolean> {
+    return this.github.issues.createComment({
+      ...this.repo,
+      issue_number: id,
+      body: comment,
+    }).then(resp => {
+      return resp.status === 201;
+    });
+  }
+
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
     if (resp.status === 200 && resp.data && resp.data.length > 0) {
       const results: DemoDeployment[] = [];

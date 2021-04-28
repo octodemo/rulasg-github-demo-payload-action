@@ -46,15 +46,47 @@ async function exec() {
       if (status?.labelsRemove?.length > 0) {
         await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
       }
+
+      const actor: string | undefined = deployment.payload?.github_context.actor;
+      if (status.demoState === DEMO_STATES.marked_warning) {
+        await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
+      } else if (status.demoState === DEMO_STATES.marked_termination) {
+        await deploymentManager.addIssueComment(issueId, getTerminationMessage(actor));
+      }
+
       core.info('done.');
     }
   }
 }
 
+function getWarningMessage(actor?: string) {
+  let prefix = 'T';
+  if (actor) {
+    prefix = `:wave: @${actor}, t`;
+  }
+
+  return `${prefix}he demo has been open for a while now. Please consider closing this issue to remove the deployment environment if no longer required.`;
+}
+
+function getTerminationMessage(actor?: string) {
+  let prefix = 'T';
+  if (actor) {
+    prefix = `:wave: @${actor}, t`;
+  }
+
+  return `
+  ${prefix}he demo has been open for a long time and is not marked for hold.
+
+  Please close this issue to release the resources, or place on hold if you need this environment to persist.
+
+  :red_circle: If you take no action the demo will be destroyed automatically. :red_circle:
+  `;
+}
+
 type DemoStatus = {
   demoState: string,
   labelsAdd: string[],
-  labelsRemove: string[],
+  labelsRemove: string[]
 };
 
 function validateStatus(status: string): DemoStatus {
