@@ -19,8 +19,10 @@ export type DemoReview = {
 
 export type AnalysisResults = {
   errored: DemoReview[],
-  warnings: DemoReview[],
-  terminations: DemoReview[]
+  to_warn: DemoReview[],
+  to_terminate: DemoReview[],
+  on_hold: DemoReview[],
+  processed: DemoReview[],
 }
 
 export class DemoDeploymentReview {
@@ -46,7 +48,42 @@ export class DemoDeploymentReview {
     return this.load();
   }
 
-  async loadDemoReviews(): Promise<DemoReview[]> {
+  async analyze(warningDays: number = 7, maxActiveDays: number = 15): Promise<AnalysisResults> {
+    const reviews: DemoReview[] = await this.loadDemoReviews();
+
+    const results: AnalysisResults = {
+      errored: [],
+      to_warn: [],
+      to_terminate: [],
+      on_hold: [],
+      processed: reviews,
+    };
+
+    reviews.forEach(review => {
+      // console.log(`Review: ${review.demo.name}`);
+      if (review.in_error) {
+        results.errored.push(review);
+      }
+
+      if (review.description === DEMO_STATES.marked_hold) {
+        results.on_hold.push(review);
+      } else {
+        const demoActiveDays = review.active_days;
+
+        if (demoActiveDays > warningDays) {
+          results.to_warn.push(review);
+        }
+
+        if (demoActiveDays > maxActiveDays) {
+          results.to_terminate.push(review);
+        }
+      }
+    });
+
+    return results;
+  }
+
+  private async loadDemoReviews(): Promise<DemoReview[]> {
     return this.getAllDemoDeployments()
       .then(demos => {
         const promises: Promise<DemoReview>[] = [];
@@ -57,39 +94,7 @@ export class DemoDeploymentReview {
       });
   }
 
-  async analyze(warningDays: number = 7, maxActiveDays: number = 15): Promise<AnalysisResults> {
-    const reviews: DemoReview[] = await this.loadDemoReviews();
-
-    const results: AnalysisResults = {
-      errored: [],
-      warnings: [],
-      terminations: [],
-    };
-
-    reviews.forEach(review => {
-      const demoActiveDays = review.active_days;
-
-      if (review.in_error) {
-        results.errored.push(review);
-      }
-
-      if (demoActiveDays > warningDays) {
-        if (review.description !== DEMO_STATES.marked_hold) {
-          results.warnings.push(review);
-        }
-      }
-
-      if (demoActiveDays > maxActiveDays) {
-        if (review.description !== DEMO_STATES.marked_hold) {
-          results.terminations.push(review)
-        }
-      }
-    });
-
-    return results;
-  }
-
-  async generateDemoReview(demo: DemoDeployment): Promise<DemoReview> {
+  private async generateDemoReview(demo: DemoDeployment): Promise<DemoReview> {
     const status: DeploymentStatus | undefined = await demo.getCurrentStatus()
       , demoActiveDays = await demo.getActiveDays()
       , trackingIssue = demo.getTrackingIssue()

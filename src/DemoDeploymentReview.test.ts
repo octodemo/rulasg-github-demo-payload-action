@@ -1,36 +1,49 @@
-// import { Octokit } from '@octokit/rest';
-// import { expect } from 'chai';
-// import { DemoDeployment } from './DemoDeployment';
-// import { DemoDeploymentReview } from './DemoDeploymentReview'
-// import { Repository } from './types';
-// import { getOctokit, getRepository } from './util';
+import { Octokit } from '@octokit/rest';
+import { expect } from 'chai';
+import { AnalysisResults, DemoDeploymentReview } from './DemoDeploymentReview';
+import { Repository } from './types';
+import { getOctokit, getRepository } from './util';
 
-// describe('DeploymentManager', () => {
+describe('DeploymentManager', () => {
 
-//   let deploymentReview: DemoDeploymentReview;
+  let deploymentReview: DemoDeploymentReview;
 
-//   let octokit: Octokit;
+  let octokit: Octokit;
 
-//   let repo: Repository;
+  let repo: Repository;
 
-//   before(async () => {
-//     octokit = getOctokit();
-//     repo = getRepository();
+  before(async () => {
+    octokit = getOctokit();
+    repo = getRepository();
 
-//     deploymentReview = await DemoDeploymentReview.createDemoReview(octokit, repo);
-//   });
+    deploymentReview = await DemoDeploymentReview.createDemoReview(octokit, repo);
+  });
 
-//   it('should load all deployments', async () => {
-//     const allDeployment: DemoDeployment[] = await deploymentReview.getAllDemoDeployments();
+  it('should generate an analysis', async () => {
+    const analysis: AnalysisResults = await deploymentReview.analyze();
 
-//     expect(allDeployment).to.not.be.undefined;
-//     console.log(JSON.stringify(allDeployment, null, 2));
-//   });
+    expect(analysis).to.have.property('processed').to.have.length.greaterThan(0);
 
-//   it('should identify old deployments', async () => {
-//     const data = await deploymentReview.analyze();
+    console.log(`Errored`);
+    analysis.errored.forEach(review => {
+      console.log(`  ${review.demo.name} id:${review.demo.id}`);
+      console.log(`  status: ${JSON.stringify(review.status)}`);
+    });
 
-//     expect(data).to.have.length.greaterThan(0);
-//   });
+    console.log(`Warnings`);
+    analysis.to_warn.forEach(review => {
+      console.log(`  ${review.demo.name} id:${review.demo.id}`);
+      console.log(`  active days: ${review.active_days}`);
+    });
 
-// });
+    console.log(`On hold`);
+    analysis.on_hold.forEach(review => {
+      console.log(`  ${review.demo.name} id:${review.demo.id}`);
+      console.log(`  active days: ${review.active_days}`);
+    });
+
+
+    console.log(`Processed: ${analysis.processed.length}`);
+  });
+
+});

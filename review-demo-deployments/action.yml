@@ -1,0 +1,25 @@
+name: 'GitHub Demo Deployments - review'
+description: Reviews the existing demo deployments and updates them based on findings
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use
+    default: ${{ github.token }}
+
+  warn_active_days:
+    description: The number of days before a warning is to be registered
+    default: 7
+
+  terminate_active_days:
+    description: The number of active days before the repository will be terminated
+    default: 15
+
+  dry_run:
+    description: Flag indicating whether or not to modify deployments
+    default: true
+    required: true
+
+runs:
+  using: node12
+  main: '../dist/review-demo-deployments.js'
