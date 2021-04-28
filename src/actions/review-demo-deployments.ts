@@ -27,12 +27,14 @@ async function exec() {
   reportWarnings(analysis.to_warn);
   reportTerminations(analysis.to_terminate);
 
+  core.startGroup('outputs');
   setOutput('deployments_to_warn', analysis.to_warn);
   setOutput('deployments_to_terminate', analysis.to_terminate);
+  core.endGroup();
 }
 
 function setOutputValue(name, value) {
-  core.info(`setting output ${name}=${value}`);
+  core.info(`${name}=${value}`);
   core.setOutput(name, value);
 }
 
