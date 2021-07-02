@@ -32,12 +32,21 @@ async function exec() {
     },
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
-    prevent_duplicates: !!core.getInput('prevent_duplicates')
+    prevent_duplicates: !!core.getInput('prevent_duplicates'),
   };
+
+  let demoConfig = undefined;
+  try {
+    let config = core.getInput('demo_config');
+    demoConfig =  config ? JSON.parse(config) : undefined;
+  } catch (err) {
+    core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
+    demoConfig = undefined;
+  }
 
   const octokit = getOctokit();
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue);
+  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig);
   const validation = await payload.validate(octokit);
 
   if (inputs.prevent_duplicates) {

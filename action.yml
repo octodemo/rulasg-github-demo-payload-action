@@ -38,6 +38,10 @@ inputs:
   issue_id:
     description: An Issue id that is tracking the lifecycle of the demo repository. This is optional
 
+  demo_config:
+    description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
+    required: false
+
   prevent_duplicates:
     description: Prevent duplicate demo instances from being created, i.e. fail early
     default: true
