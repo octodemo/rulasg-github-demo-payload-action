@@ -21,15 +21,21 @@ export class DemoPayload {
 
   private linkedIssueId?: number;
 
+  private demoConfig?: {[key: string]: any};
+
   private validation?: Validation;
 
-  constructor(target: Repository, template: Template, user?: string, issue?: string) {
+  constructor(target: Repository, template: Template, user?: string, issue?: string, demoConfig?: {[key: string]: any}) {
     this.target = target;
     this.template = template;
     this.user = user || github.context.actor;
 
     if (issue) {
       this.linkedIssueId = parseInt(issue);
+    }
+
+    if (demoConfig) {
+      this.demoConfig = demoConfig;
     }
   }
 
@@ -63,6 +69,10 @@ export class DemoPayload {
 
     if (this.linkedIssueId) {
       result.github_context['tracking_issue'] = { id: this.linkedIssueId };
+    }
+
+    if (this.demoConfig) {
+      result.github_context['demo_config'] = this.demoConfig;
     }
 
     return result;
