@@ -53,14 +53,36 @@ async function exec() {
 
   if (inputs.prevent_duplicates) {
     if (validation.targetRepoExists) {
-      try {
-        if (inputs.issue) {
-          await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
+      // Obtain the existing deployment object and check if this issue is the same as the one stored in the tracking/communication issue
+      // if so the issue ticket has been re-opened and this is not technically a duplicate, although there could be a secondary workflow
+      // executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
+
+      const existingDeployment = await deploymentManager.getDemoDeployment(`${payload.target.owner}/${payload.target.repo}`);
+      if (existingDeployment) {
+        if (existingDeployment.getTrackingIssue() === payload.linkedIssueId) {
+          core.warning(`Existing deployment for demo environment found and matched to the same tracking issue: ${payload.linkedIssueId}.\nThis typcially means that it was not torn down cleanly from a previous lifecycle.`);
+        } else {
+          core.error(`There is an existing deployment present: ${existingDeployment.id}:${existingDeployment.name} it is not allowed to have duplicate demo environments.`);
+          try {
+            if (inputs.issue) {
+              await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
+            }
+          } catch (err) {
+            core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
+          } finally {
+            throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+          }
         }
-      } catch (err) {
-        core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
-      } finally {
-        throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+      } else {
+        try {
+          if (inputs.issue) {
+            await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
+          }
+        } catch (err) {
+          core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
+        } finally {
+          throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
+        }
       }
     }
   }
