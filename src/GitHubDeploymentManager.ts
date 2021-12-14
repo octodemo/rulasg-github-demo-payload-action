@@ -18,6 +18,7 @@ export class GitHubDeploymentManager {
   }
 
   getDeploymentStatus(id: number): Promise<DeploymentStatus | undefined> {
+    //TODO possible pagination issue
     return this.github.repos.listDeploymentStatuses({
       ...this.repo,
       deployment_id: id,
@@ -250,7 +251,7 @@ export class GitHubDeploymentManager {
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
     if (resp && resp.length > 0) {
       const results: DemoDeployment[] = [];
-      resp.data.forEach(demo => {
+      resp.forEach(demo => {
         results.push(this.extractDemoDeployment(demo));
       });
       return results;

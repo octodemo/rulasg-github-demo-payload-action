@@ -116,6 +116,7 @@ class GitHubDeploymentManager {
         this.ref = ref || 'main';
     }
     getDeploymentStatus(id) {
+        //TODO possible pagination issue
         return this.github.repos.listDeploymentStatuses({
             ...this.repo,
             deployment_id: id,
@@ -322,7 +323,7 @@ class GitHubDeploymentManager {
     extractDemoDeploymentsFromResponse(resp) {
         if (resp && resp.length > 0) {
             const results = [];
-            resp.data.forEach(demo => {
+            resp.forEach(demo => {
                 results.push(this.extractDemoDeployment(demo));
             });
             return results;
