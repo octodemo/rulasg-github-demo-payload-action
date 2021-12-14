@@ -25,11 +25,11 @@ async function exec() {
   const results: DemoDeployment[] = [];
 
   core.startGroup('Deploy Deployments');
-  allDeployments.forEach(deployment => {
+  allDeployments.forEach(async (deployment) => {
     const createdDate = new Date(deployment.getCreatedAt());
     if (createdDate.getTime() < beforeDate.getTime()) {
       results.push(deployment);
-      displayDeployment(deployment);
+      await displayDeployment(deployment);
     }
   });
   core.endGroup();
