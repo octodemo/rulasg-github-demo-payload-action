@@ -144,7 +144,7 @@ function getDemoDeployment(config?: DemoDeploymentConfig): GitHubDeployment {
   const trackingIssueId = config?.issue || 84;
   const createdDate:string | undefined =  config?.created || undefined;
 
-  const data = {
+  const data: GitHubDeployment = {
     "url": "https://api.github.com/repos/octodemo/demo-bootstrap/deployments/352610681",
     "id": 352610681,
     "node_id": "MDEwOkRlcGxveW1lbnQzNTI2MTA2ODE=",

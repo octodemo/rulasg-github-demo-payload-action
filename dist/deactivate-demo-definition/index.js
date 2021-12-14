@@ -176,20 +176,19 @@ class GitHubDeploymentManager {
         });
     }
     getAllDemoDeployments() {
-        return this.github.repos.listDeployments({
+        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
             task: constants_1.DEMO_DEPLOYMENT_TASK,
-        }).then(resp => {
-            return this.extractDemoDeploymentsFromResponse(resp);
+        }).then(deployments => {
+            return this.extractDemoDeploymentsFromResponse(deployments);
         });
     }
     getDemoDeployments(name) {
-        return this.github.repos.listDeployments({
+        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
-            environment: `demo/${name}`,
             task: constants_1.DEMO_DEPLOYMENT_TASK,
-        }).then(resp => {
-            return this.extractDemoDeploymentsFromResponse(resp);
+        }).then(deployments => {
+            return this.extractDemoDeploymentsFromResponse(deployments);
         });
     }
     getDemoDeployment(name) {
@@ -321,7 +320,7 @@ class GitHubDeploymentManager {
         });
     }
     extractDemoDeploymentsFromResponse(resp) {
-        if (resp.status === 200 && resp.data && resp.data.length > 0) {
+        if (resp && resp.length > 0) {
             const results = [];
             resp.data.forEach(demo => {
                 results.push(this.extractDemoDeployment(demo));

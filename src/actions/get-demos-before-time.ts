@@ -22,15 +22,22 @@ async function exec() {
 
   const allDeployments = await demoReview.getAllDemoDeployments();
 
-  // const results: DemoDeployment[] = [];
+  const results: DemoDeployment[] = [];
 
+  core.startGroup('Deploy Deployments');
   allDeployments.forEach(deployment => {
     const createdDate = new Date(deployment.getCreatedAt());
     if (createdDate.getTime() < beforeDate.getTime()) {
-      // results.push(deployment);
+      results.push(deployment);
       displayDeployment(deployment);
     }
   });
+  core.endGroup();
+
+  core.startGroup('Summary');
+  core.info(`Processed ${results.length} demo deployments`);
+  core.endGroup();
+
   // Might want to expose the results for further processing
 }
 

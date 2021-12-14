@@ -84,22 +84,25 @@ export class GitHubDeploymentManager {
   }
 
   getAllDemoDeployments(): Promise<DemoDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
-      ...this.repo,
-      task: DEMO_DEPLOYMENT_TASK,
-    }).then(resp => {
-      return this.extractDemoDeploymentsFromResponse(resp)
-    });
+    return this.github.paginate(
+      'GET /repos/{owner}/{repo}/deployments',
+      {
+        ...this.repo,
+        task: DEMO_DEPLOYMENT_TASK,
+      }).then(deployments => {
+        return this.extractDemoDeploymentsFromResponse(deployments)
+      });
   }
 
   getDemoDeployments(name: string): Promise<DemoDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
-      ...this.repo,
-      environment: `demo/${name}`,
-      task: DEMO_DEPLOYMENT_TASK,
-    }).then(resp => {
-      return this.extractDemoDeploymentsFromResponse(resp)
-    });
+    return this.github.paginate(
+      'GET /repos/{owner}/{repo}/deployments',
+      {
+        ...this.repo,
+        task: DEMO_DEPLOYMENT_TASK,
+      }).then(deployments => {
+        return this.extractDemoDeploymentsFromResponse(deployments)
+      });
   }
 
   getDemoDeployment(name: string): Promise<DemoDeployment | undefined> {
@@ -245,7 +248,7 @@ export class GitHubDeploymentManager {
   }
 
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
-    if (resp.status === 200 && resp.data && resp.data.length > 0) {
+    if (resp && resp.length > 0) {
       const results: DemoDeployment[] = [];
       resp.data.forEach(demo => {
         results.push(this.extractDemoDeployment(demo));
