@@ -25,7 +25,7 @@ export function getGitHubToken(): string {
     token = core.getInput('github_token');
 
     if (!token) {
-      throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN"');
+      throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
     }
   }
   return token;

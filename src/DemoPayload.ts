@@ -19,7 +19,7 @@ export class DemoPayload {
 
   readonly user: string;
 
-  private linkedIssueId?: number;
+  readonly linkedIssueId?: number;
 
   private demoConfig?: {[key: string]: any};
 

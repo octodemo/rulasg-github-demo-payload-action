@@ -9,6 +9,7 @@
     "github.github-vscode-theme",
     "coenraads.bracket-pair-colorizer",
   ],
+  "postAttachCommand": "npm install",
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
     "telemetry.enableTelemetry": false,
