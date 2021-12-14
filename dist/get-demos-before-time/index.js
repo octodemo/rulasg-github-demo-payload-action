@@ -507,7 +507,7 @@ async function run() {
         await exec();
     }
     catch (err) {
-        core.debug(util_1.inspect(err));
+        core.warning(util_1.inspect(err));
         core.setFailed(err);
     }
 }

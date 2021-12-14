@@ -9,7 +9,7 @@ async function run() {
   try {
     await exec();
   } catch (err) {
-    core.debug(inspect(err))
+    core.warning(inspect(err))
     core.setFailed(err);
   }
 }
