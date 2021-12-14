@@ -33,13 +33,13 @@ describe('DeploymentManager', () => {
     console.log(`Warnings`);
     analysis.to_warn.forEach(review => {
       console.log(`  ${review.demo.name} id:${review.demo.id}`);
-      console.log(`  active days: ${review.active_days}`);
+      console.log(`  active days: ${review.days_in_state}`);
     });
 
     console.log(`On hold`);
     analysis.on_hold.forEach(review => {
       console.log(`  ${review.demo.name} id:${review.demo.id}`);
-      console.log(`  active days: ${review.active_days}`);
+      console.log(`  active days: ${review.days_in_state}`);
     });
 
 

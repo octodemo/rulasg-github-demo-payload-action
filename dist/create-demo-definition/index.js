@@ -76,10 +76,10 @@ class DemoDeployment {
         });
     }
     getTrackingIssue() {
-        var _a;
+        var _a, _b;
         const payloadData = this.payload;
         if (payloadData) {
-            return (_a = payloadData.github_context.tracking_issue) === null || _a === void 0 ? void 0 : _a.id;
+            return (_b = (_a = payloadData === null || payloadData === void 0 ? void 0 : payloadData.github_context) === null || _a === void 0 ? void 0 : _a.tracking_issue) === null || _b === void 0 ? void 0 : _b.id;
         }
         return undefined;
     }
@@ -90,6 +90,9 @@ class DemoDeployment {
             return labels.indexOf('duplicate') > -1;
         }
         return false;
+    }
+    getCreatedAt() {
+        return this.data.created_at;
     }
 }
 exports.DemoDeployment = DemoDeployment;

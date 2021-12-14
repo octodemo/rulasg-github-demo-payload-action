@@ -15,7 +15,8 @@
     "build:demo-deprovisioning-status": "ncc build lib/actions/demo-deprovisioning-status.js -o dist/demo-deprovisioning-status --source-map",
     "build:review-demo-deployments": "ncc build lib/actions/review-demo-deployments.js -o dist/review-demo-deployments --source-map",
     "build:get-demos-to-terminate": "ncc build lib/actions/get-demos-to-terminate.js -o dist/get-demos-to-terminate --source-map",
-    "package": "npm run build && npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate",
+    "build:get-demos-before-time": "ncc build lib/actions/get-demos-before-time.js -o dist/get-demos-before-time --source-map",
+    "package": "npm run build && npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate && npm run build:get-demos-before-time",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
