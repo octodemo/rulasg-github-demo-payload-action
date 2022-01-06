@@ -187,6 +187,7 @@ class GitHubDeploymentManager {
     getDemoDeployments(name) {
         return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
+            environment: `demo/${name}`,
             task: constants_1.DEMO_DEPLOYMENT_TASK,
         }).then(deployments => {
             return this.extractDemoDeploymentsFromResponse(deployments);
