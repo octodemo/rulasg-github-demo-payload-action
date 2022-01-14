@@ -421,7 +421,7 @@ async function exec() {
             await manager.addIssueLabels(issueNumber, ...labelsToAdd);
         }
         if (labelsToRemove.length > 0) {
-            core.info(`Removing labels: ${JSON.stringify(labelsToAdd)}`);
+            core.info(`Removing labels: ${JSON.stringify(labelsToRemove)}`);
             await manager.removeIssueLabels(issueNumber, ...labelsToRemove);
         }
     }
