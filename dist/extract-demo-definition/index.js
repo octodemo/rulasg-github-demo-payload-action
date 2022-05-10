@@ -452,7 +452,7 @@ async function exec() {
         }
         const templateRepo = payload === null || payload === void 0 ? void 0 : payload.github_context.template_repository;
         if (templateRepo) {
-            setOutput('template_repositoryowner', templateRepo.owner);
+            setOutput('template_repository_owner', templateRepo.owner);
             setOutput('template_repository_name', templateRepo.repo);
             setOutput('template_repository_full_name', `${templateRepo.owner}/${templateRepo.repo}`);
             setOutput('template_repository_ref', templateRepo.ref);
