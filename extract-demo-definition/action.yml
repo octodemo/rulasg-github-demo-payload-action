@@ -28,6 +28,12 @@ outputs:
   tracking_issue_id:
     description: The GitHub Issue ID that is being used to track the demo lifecycle, optional.
 
+  template_repository_owner:
+    description: The owner value for the template repository that the demo is built from.
+    
+  template_repository_name:
+    description: The repository short name value for the template repository that the demo is built from.
+    
   template_repository_full_name:
     description: The full <owner>/<repo> value for the template repository that the demo is built from.
 
