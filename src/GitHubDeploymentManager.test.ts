@@ -36,11 +36,11 @@ describe('DeploymentManager', function () {
       if (environment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
-          await octokit.repos.deleteDeployment({
+          await octokit.rest.repos.deleteDeployment({
             ...repo,
             deployment_id: environment.id
           })
-        } catch (err) {
+        } catch (err: any) {
           if (err.status !== 404) {
             throw err;
           }
@@ -53,7 +53,7 @@ describe('DeploymentManager', function () {
     }
 
     async function createEnvironmentDeployment(name): Promise<{ [key: string]: any }> {
-      const resp = await octokit.repos.createDeployment({
+      const resp = await octokit.rest.repos.createDeployment({
         ...repo,
         ref: 'main',
         task: 'deploy',
@@ -155,11 +155,11 @@ describe('DeploymentManager', function () {
       if (deployment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
-          await octokit.repos.deleteDeployment({
+          await octokit.rest.repos.deleteDeployment({
             ...repo,
             deployment_id: deployment.id
           })
-        } catch (err) {
+        } catch (err: any) {
           if (err.status !== 404) {
             throw err;
           }

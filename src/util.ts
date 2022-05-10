@@ -47,9 +47,9 @@ export function getRequiredInput(name: string) {
 
 export async function repositoryExists(octokit: Octokit, repo: Repository): Promise<boolean> {
   try {
-    await octokit.repos.get(repo);
+    await octokit.rest.repos.get(repo);
     return true;
-  } catch (err) {
+  } catch (err: any) {
     if (err.status === 404) {
       return false
     }
@@ -59,9 +59,9 @@ export async function repositoryExists(octokit: Octokit, repo: Repository): Prom
 
 export async function repositoryBranchExists(octokit: Octokit, repo: Repository, ref: string): Promise<boolean> {
   try {
-    await octokit.repos.getBranch({...repo, branch: ref});
+    await octokit.rest.repos.getBranch({...repo, branch: ref});
     return true;
-  } catch (err) {
+  } catch (err: any) {
     if (err.status === 404) {
       return false
     }

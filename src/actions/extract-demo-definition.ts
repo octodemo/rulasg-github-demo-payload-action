@@ -7,7 +7,7 @@ import { getOctokit, getRequiredInput } from '../util';
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.debug(inspect(err))
     core.setFailed(err);
   }
@@ -16,6 +16,11 @@ run();
 
 
 async function exec() {
+  function setOutput(name: string, value: string):void {
+    core.info(`${name}: ${value}`);
+    core.setOutput(name, value);
+  }
+
   const inputs = {
     owner: getRequiredInput('repository_owner'),
     repo: getRequiredInput('repository_name'),
@@ -59,19 +64,14 @@ async function exec() {
 
     const templateRepo = payload?.github_context.template_repository;
     if (templateRepo) {
-      const templateFullName = `${templateRepo.owner}/${templateRepo.repo}`;
-      core.info(`template_repository_full_name: ${templateFullName}`);
-      core.setOutput('template_repository_full_name', templateFullName);
-
-      core.info(`template_repository_ref: ${templateRepo.ref}`);
-      core.setOutput('template_repository_ref', templateRepo.ref);
+      setOutput('template_repositoryowner', templateRepo.owner);
+      setOutput('template_repository_name', templateRepo.repo);
+      setOutput('template_repository_full_name', `${templateRepo.owner}/${templateRepo.repo}`);
+      setOutput('template_repository_ref', templateRepo.ref);
     }
 
-    core.info(`demo_environment_deployment_id: ${demoDeployment.id}`);
-    core.setOutput('demo_environment_deployment_id', demoDeployment.id);
-
-    core.info(`demo_environment_deployment_name: ${demoDeployment.environment}`);
-    core.setOutput('demo_environment_deployment_name', demoDeployment.environment);
+    setOutput('demo_environment_deployment_id', `${demoDeployment.id}`);
+    setOutput('demo_environment_deployment_name', demoDeployment.environment);
 
     core.endGroup();
   }

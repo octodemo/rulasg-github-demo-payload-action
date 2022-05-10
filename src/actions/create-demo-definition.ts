@@ -9,7 +9,7 @@ import { getOctokit, getRequiredInput } from '../util';
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.debug(inspect(err))
     core.setFailed(err);
   }
@@ -41,7 +41,7 @@ async function exec() {
     if (config && config.trim().length > 0) {
       demoConfig =  config ? JSON.parse(config) : undefined;
     }
-  } catch (err) {
+  } catch (err: any) {
     core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
     demoConfig = undefined;
   }
@@ -67,7 +67,7 @@ async function exec() {
             if (inputs.issue) {
               await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
             }
-          } catch (err) {
+          } catch (err: any) {
             core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
           } finally {
             throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
@@ -78,7 +78,7 @@ async function exec() {
           if (inputs.issue) {
             await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
           }
-        } catch (err) {
+        } catch (err: any) {
           core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
         } finally {
           throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
