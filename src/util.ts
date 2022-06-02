@@ -54,7 +54,7 @@ export function getTags(inputName: string): Tags {
     tags.forEach((tag: string) => {
       const parts =  tag.split('=');
       if (parts.length == 2) {
-        result[parts[0]] = parts[1];
+        result[parts[0].trim()] = parts[1].trim();
       } else {
         throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
       }
