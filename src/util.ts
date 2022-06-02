@@ -1,6 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 
+export type Tags = {[key: string]: string};
+
 export type Repository = {
   owner: string,
   repo: string,
@@ -39,6 +41,26 @@ export function getRepository() {
     owner: repoOwner || 'peter-murray',
     repo: repoName || 'github-demo-payload-action',
   };
+}
+
+export function getTags(inputName: string): Tags {
+  const raw: string = core.getInput(inputName)
+    , result: Tags = {}
+    ;
+
+  if (raw) {
+    const tags: string[] = raw.split(',');
+
+    tags.forEach((tag: string) => {
+      const parts =  tag.split('=');
+      if (parts.length == 2) {
+        result[parts[0]] = parts[1];
+      } else {
+        throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+      }
+    });
+  }
+  return result;
 }
 
 export function getRequiredInput(name: string) {

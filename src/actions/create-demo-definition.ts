@@ -4,7 +4,7 @@ import { inspect } from 'util';
 import { DEMO_STATES } from '../constants';
 import { DemoPayload } from '../DemoPayload';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput } from '../util';
+import { getOctokit, getRequiredInput, getTags } from '../util';
 
 async function run() {
   try {
@@ -33,6 +33,7 @@ async function exec() {
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
     prevent_duplicates: !!core.getInput('prevent_duplicates'),
+    tags: getTags('tags'),
   };
 
   let demoConfig = undefined;
@@ -48,7 +49,7 @@ async function exec() {
 
   const octokit = getOctokit();
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig);
+  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
   const validation = await payload.validate(octokit);
 
   if (inputs.prevent_duplicates) {

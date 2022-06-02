@@ -121,7 +121,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.repositoryBranchExists = exports.repositoryExists = exports.getRequiredInput = exports.getRepository = exports.getGitHubToken = exports.getOctokit = void 0;
+exports.repositoryBranchExists = exports.repositoryExists = exports.getRequiredInput = exports.getTags = exports.getRepository = exports.getGitHubToken = exports.getOctokit = void 0;
 const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 function getOctokit(token) {
@@ -155,6 +155,23 @@ function getRepository() {
     };
 }
 exports.getRepository = getRepository;
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0]] = parts[1];
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+exports.getTags = getTags;
 function getRequiredInput(name) {
     return core.getInput(name, { required: true });
 }
