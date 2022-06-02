@@ -5,6 +5,8 @@
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs":"active",
 
     "[javascript]": {
       "editor.tabSize": 2

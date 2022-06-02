@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
 import { Template } from './types';
-import { Repository, repositoryBranchExists, repositoryExists } from './util';
+import { Repository, repositoryBranchExists, repositoryExists, Tags } from './util';
 
 
 export type Validation = {
@@ -21,11 +21,13 @@ export class DemoPayload {
 
   readonly linkedIssueId?: number;
 
-  private demoConfig?: {[key: string]: any};
+  private demoConfig?: { [key: string]: any };
+
+  private tags?: Tags
 
   private validation?: Validation;
 
-  constructor(target: Repository, template: Template, user?: string, issue?: string, demoConfig?: {[key: string]: any}) {
+  constructor(target: Repository, template: Template, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
     this.target = target;
     this.template = template;
     this.user = user || github.context.actor;
@@ -34,9 +36,8 @@ export class DemoPayload {
       this.linkedIssueId = parseInt(issue);
     }
 
-    if (demoConfig) {
-      this.demoConfig = demoConfig;
-    }
+    this.demoConfig = demoConfig || undefined;
+    this.tags = tags || undefined;
   }
 
   async validate(octokit: Octokit): Promise<Validation> {
@@ -65,6 +66,10 @@ export class DemoPayload {
       azure_context: {},
       gcp_context: {},
       aws_context: {},
+
+      cloud: {
+        tags: {}
+      }
     };
 
     if (this.linkedIssueId) {
@@ -73,6 +78,10 @@ export class DemoPayload {
 
     if (this.demoConfig) {
       result.github_context['demo_config'] = this.demoConfig;
+    }
+
+    if (this.tags) {
+      result.cloud.tags = this.tags;
     }
 
     return result;

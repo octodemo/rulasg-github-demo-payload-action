@@ -10,7 +10,7 @@ import { getOctokit, getRequiredInput } from '../util';
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.debug(inspect(err))
     core.setFailed(err);
   }

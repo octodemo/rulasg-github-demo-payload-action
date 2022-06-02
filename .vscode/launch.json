@@ -21,6 +21,30 @@
       ]
     },
     {
+      "name": "DeploymentManagerTests - octodemo/demo-bootstrap",
+      "type": "pwa-node",
+      "request": "launch",
+      "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "-r",
+        "ts-node/register",
+        "${workspaceFolder}/src/GitHubDeploymentManager.test.ts"
+      ],
+      "env": {
+        "GITHUB_REPO_OWNER": "octodemo",
+        "GITHUB_REPO_NAME": "demo-bootstrap",
+        "GITHUB_TOKEN": "xxx"
+      },
+      "cwd": "${workspaceRoot}",
+      "internalConsoleOptions": "openOnSessionStart",
+      "envFile": "${workspaceFolder}/.env",
+      "sourceMaps": true,
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
       "name": "Current TS File",
       "type": "pwa-node",
       "request": "launch",

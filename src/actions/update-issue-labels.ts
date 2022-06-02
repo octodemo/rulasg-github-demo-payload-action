@@ -7,7 +7,7 @@ import { getOctokit, getRequiredInput } from '../util';
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.debug(inspect(err))
     core.setFailed(err);
   }
@@ -36,7 +36,7 @@ async function exec(): Promise<void> {
     }
 
     if (labelsToRemove.length > 0) {
-      core.info(`Removing labels: ${JSON.stringify(labelsToAdd)}`);
+      core.info(`Removing labels: ${JSON.stringify(labelsToRemove)}`);
       await manager.removeIssueLabels(issueNumber, ...labelsToRemove);
     }
   }

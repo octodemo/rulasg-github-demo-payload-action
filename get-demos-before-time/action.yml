@@ -1,0 +1,16 @@
+name: 'GitHub Demo Deployments - get demos before time'
+description: Locates the demo deployments that were created before a specific time
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use
+    default: ${{ github.token }}
+
+  before:
+    description: The timestamp in YYY-MM-DDTHH:mm:SS
+    required: true
+
+runs:
+  using: node12
+  main: '../dist/get-demos-before-time/index.js'

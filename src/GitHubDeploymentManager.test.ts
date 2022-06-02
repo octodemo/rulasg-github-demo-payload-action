@@ -4,7 +4,9 @@ import { GitHubDeploymentManager } from './GitHubDeploymentManager';
 import { Repository } from './types';
 import { getOctokit, getRepository } from './util';
 
-describe('DeploymentManager', () => {
+describe('DeploymentManager', function () {
+
+  this.timeout(10000);
 
   let deploymentManager: GitHubDeploymentManager;
 
@@ -15,6 +17,8 @@ describe('DeploymentManager', () => {
   before(() => {
     octokit = getOctokit();
     repo = getRepository();
+
+    console.log(`Repository: ${repo.owner}/${repo.repo}`);
 
     deploymentManager = new GitHubDeploymentManager(repo, octokit);
   });
@@ -32,11 +36,11 @@ describe('DeploymentManager', () => {
       if (environment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
-          await octokit.repos.deleteDeployment({
+          await octokit.rest.repos.deleteDeployment({
             ...repo,
             deployment_id: environment.id
           })
-        } catch (err) {
+        } catch (err: any) {
           if (err.status !== 404) {
             throw err;
           }
@@ -49,7 +53,7 @@ describe('DeploymentManager', () => {
     }
 
     async function createEnvironmentDeployment(name): Promise<{ [key: string]: any }> {
-      const resp = await octokit.repos.createDeployment({
+      const resp = await octokit.rest.repos.createDeployment({
         ...repo,
         ref: 'main',
         task: 'deploy',
@@ -151,11 +155,11 @@ describe('DeploymentManager', () => {
       if (deployment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
-          await octokit.repos.deleteDeployment({
+          await octokit.rest.repos.deleteDeployment({
             ...repo,
             deployment_id: deployment.id
           })
-        } catch (err) {
+        } catch (err: any) {
           if (err.status !== 404) {
             throw err;
           }
@@ -203,6 +207,14 @@ describe('DeploymentManager', () => {
         expect(result).to.have.property('id').to.equal(deployment.id);
         expect(result).to.have.property('environment').to.equal(getDeploymentName());
       });
+
+      // it('should get an existing demo deployment', async () => {
+      //   const name = `demo/octodemo/colinbealesDemo`;
+
+      //   const result = await deploymentManager.getDemoDeployment(name);
+      //   expect(result).to.have.property('id').to.equal(deployment.id);
+      //   expect(result).to.have.property('environment').to.equal(getDeploymentName());
+      // });
 
       it('should not retrive an non-existant demo deployment', async () => {
         const name = DEPLOYMENT_NAME + Date.now();

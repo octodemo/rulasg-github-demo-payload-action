@@ -4,12 +4,12 @@ import { inspect } from 'util';
 import { DEMO_STATES } from '../constants';
 import { DemoPayload } from '../DemoPayload';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput } from '../util';
+import { getOctokit, getRequiredInput, getTags } from '../util';
 
 async function run() {
   try {
     await exec();
-  } catch (err) {
+  } catch (err: any) {
     core.debug(inspect(err))
     core.setFailed(err);
   }
@@ -33,6 +33,7 @@ async function exec() {
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
     prevent_duplicates: !!core.getInput('prevent_duplicates'),
+    tags: getTags('tags'),
   };
 
   let demoConfig = undefined;
@@ -41,14 +42,14 @@ async function exec() {
     if (config && config.trim().length > 0) {
       demoConfig =  config ? JSON.parse(config) : undefined;
     }
-  } catch (err) {
+  } catch (err: any) {
     core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
     demoConfig = undefined;
   }
 
   const octokit = getOctokit();
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig);
+  const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
   const validation = await payload.validate(octokit);
 
   if (inputs.prevent_duplicates) {
@@ -67,7 +68,7 @@ async function exec() {
             if (inputs.issue) {
               await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
             }
-          } catch (err) {
+          } catch (err: any) {
             core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
           } finally {
             throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);
@@ -78,7 +79,7 @@ async function exec() {
           if (inputs.issue) {
             await deploymentManager.addIssueLabels(parseInt(inputs.issue), 'duplicate');
           }
-        } catch (err) {
+        } catch (err: any) {
           core.error(`Failed to add duplicate label to tracking issue ${inputs.issue}; ${err.message}`);
         } finally {
           throw new Error(`Target repository '${inputs.target.owner}/${inputs.target.repo}' already exists, cannot proceed.`);

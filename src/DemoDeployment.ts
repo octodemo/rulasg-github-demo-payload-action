@@ -93,7 +93,7 @@ export class DemoDeployment {
     const payloadData = this.payload;
 
     if (payloadData) {
-      return payloadData.github_context.tracking_issue?.id;
+      return payloadData?.github_context?.tracking_issue?.id;
     }
     return undefined;
   }
@@ -105,5 +105,9 @@ export class DemoDeployment {
       return labels.indexOf('duplicate') > -1;
     }
     return false;
+  }
+
+  getCreatedAt(): string {
+    return this.data.created_at;
   }
 }

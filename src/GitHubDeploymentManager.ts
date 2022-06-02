@@ -1,7 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
 import { DemoDeployment } from './DemoDeployment';
-import { GitHubDeployment, DeploymentState, DeploymentStatus, Repository } from './types';
+import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types';
 
 export class GitHubDeploymentManager {
 
@@ -18,6 +18,7 @@ export class GitHubDeploymentManager {
   }
 
   getDeploymentStatus(id: number): Promise<DeploymentStatus | undefined> {
+    //TODO possible pagination issue
     return this.github.repos.listDeploymentStatuses({
       ...this.repo,
       deployment_id: id,
@@ -84,22 +85,26 @@ export class GitHubDeploymentManager {
   }
 
   getAllDemoDeployments(): Promise<DemoDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
-      ...this.repo,
-      task: DEMO_DEPLOYMENT_TASK,
-    }).then(resp => {
-      return this.extractDemoDeploymentsFromResponse(resp)
-    });
+    return this.github.paginate(
+      'GET /repos/{owner}/{repo}/deployments',
+      {
+        ...this.repo,
+        task: DEMO_DEPLOYMENT_TASK,
+      }).then(deployments => {
+        return this.extractDemoDeploymentsFromResponse(deployments)
+      });
   }
 
   getDemoDeployments(name: string): Promise<DemoDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
-      ...this.repo,
-      environment: `demo/${name}`,
-      task: DEMO_DEPLOYMENT_TASK,
-    }).then(resp => {
-      return this.extractDemoDeploymentsFromResponse(resp)
-    });
+    return this.github.paginate(
+      'GET /repos/{owner}/{repo}/deployments',
+      {
+        ...this.repo,
+        environment: `demo/${name}`,
+        task: DEMO_DEPLOYMENT_TASK,
+      }).then(deployments => {
+        return this.extractDemoDeploymentsFromResponse(deployments)
+      });
   }
 
   getDemoDeployment(name: string): Promise<DemoDeployment | undefined> {
@@ -124,7 +129,7 @@ export class GitHubDeploymentManager {
     });
   }
 
-  createDemoDeployment(name: string,  payload: {[key: string]: any }): Promise<DemoDeployment> {
+  createDemoDeployment(name: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
     return this.github.repos.createDeployment({
       ...this.repo,
       ref: this.ref,
@@ -173,11 +178,11 @@ export class GitHubDeploymentManager {
 
     return this.github.repos.createDeploymentStatus(payload)
       .then(resp => {
-      if (resp.status !== 201) {
-        throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
-      }
-      return createDeploymentStatus(resp.data);
-    });
+        if (resp.status !== 201) {
+          throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
+        }
+        return createDeploymentStatus(resp.data);
+      });
   }
 
   getIssueLabels(issueId: number): Promise<string[]> {
@@ -217,14 +222,14 @@ export class GitHubDeploymentManager {
         issue_number: issueId,
         name: label
       })
-      .catch(err => {
-        // Ignore errors that prove the label is not there
-        if (err.status !== 404 && err.status !== 410) {
-          throw err;
-        }
-      }).then(() => {
-        return true;
-      });
+        .catch(err => {
+          // Ignore errors that prove the label is not there
+          if (err.status !== 404 && err.status !== 410) {
+            throw err;
+          }
+        }).then(() => {
+          return true;
+        });
 
       promises.push(promise);
     })
@@ -245,9 +250,9 @@ export class GitHubDeploymentManager {
   }
 
   private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
-    if (resp.status === 200 && resp.data && resp.data.length > 0) {
+    if (resp && resp.length > 0) {
       const results: DemoDeployment[] = [];
-      resp.data.forEach(demo => {
+      resp.forEach(demo => {
         results.push(this.extractDemoDeployment(demo));
       });
       return results;
@@ -255,13 +260,13 @@ export class GitHubDeploymentManager {
     return undefined;
   }
 
-  private extractDemoDeployment(deployment: {[key: string]: any }) {
+  private extractDemoDeployment(deployment: { [key: string]: any }) {
     return new DemoDeployment(extractDeployment(deployment), this);
   }
 }
 
 
-function extractDeployment(deployment: {[key: string]: any }): GitHubDeployment {
+function extractDeployment(deployment: { [key: string]: any }): GitHubDeployment {
   // @ts-ignore
   const result: GitHubDeployment = {};
   ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'environment'].forEach(key => {

@@ -100,6 +100,112 @@ exports.DemoDeployment = DemoDeployment;
 
 /***/ }),
 
+/***/ 4622:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DemoDeploymentReview = void 0;
+const constants_1 = __nccwpck_require__(5105);
+const GitHubDeploymentManager_1 = __nccwpck_require__(3541);
+class DemoDeploymentReview {
+    constructor(octokit, repo, ref) {
+        this.loaded = false;
+        this.deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(repo, octokit, ref);
+        this.loaded = false;
+    }
+    static async createDemoReview(octokit, repo, ref) {
+        const review = new DemoDeploymentReview(octokit, repo, ref);
+        await review.load();
+        return review;
+    }
+    async getAllDemoDeployments() {
+        return this.load();
+    }
+    async getDemosToTerminate(gracePeriod = 5) {
+        const reviews = await this.loadDemoReviews();
+        const results = [];
+        reviews.forEach(review => {
+            if (review.lifecycle_state === constants_1.DEMO_STATES.marked_termination) {
+                if (review.days_in_state > gracePeriod) {
+                    results.push(review);
+                }
+            }
+        });
+        return results;
+    }
+    async analyze(warningDays = 7, maxActiveDays = 15) {
+        const reviews = await this.loadDemoReviews();
+        const results = {
+            errored: [],
+            to_warn: [],
+            to_terminate: [],
+            on_hold: [],
+            processed: reviews,
+        };
+        reviews.forEach(review => {
+            if (review.in_error) {
+                results.errored.push(review);
+            }
+            if (review.lifecycle_state === constants_1.DEMO_STATES.marked_hold) {
+                results.on_hold.push(review);
+            }
+            else {
+                const daysInState = review.days_in_state;
+                if (daysInState > warningDays && review.lifecycle_state !== constants_1.DEMO_STATES.marked_warning) {
+                    results.to_warn.push(review);
+                }
+                if (daysInState > maxActiveDays && review.lifecycle_state !== constants_1.DEMO_STATES.marked_termination) {
+                    results.to_terminate.push(review);
+                }
+            }
+        });
+        return results;
+    }
+    async loadDemoReviews() {
+        return this.getAllDemoDeployments()
+            .then(demos => {
+            const promises = [];
+            demos === null || demos === void 0 ? void 0 : demos.forEach(demo => {
+                promises.push(this.generateDemoReview(demo));
+            });
+            return Promise.all(promises);
+        });
+    }
+    async generateDemoReview(demo) {
+        const status = await demo.getCurrentStatus(), demoActiveDays = await demo.getActiveDays(), trackingIssue = demo.getTrackingIssue();
+        const result = {
+            demo: demo,
+            days_in_state: demoActiveDays,
+            status: status === null || status === void 0 ? void 0 : status.state,
+            in_error: (status === null || status === void 0 ? void 0 : status.state) !== 'success',
+            lifecycle_state: status === null || status === void 0 ? void 0 : status.description,
+            log_url: status === null || status === void 0 ? void 0 : status.log_url,
+        };
+        if (trackingIssue) {
+            const labels = await this.deploymentManager.getIssueLabels(trackingIssue);
+            result.issue = {
+                id: trackingIssue,
+                labels: labels,
+            };
+        }
+        return result;
+    }
+    async load() {
+        if (!this.loaded) {
+            this.allDemos = await this.deploymentManager.getAllDemoDeployments();
+            this.loaded = true;
+        }
+        // @ts-ignore
+        return this.allDemos;
+    }
+}
+exports.DemoDeploymentReview = DemoDeploymentReview;
+//# sourceMappingURL=DemoDeploymentReview.js.map
+
+/***/ }),
+
 /***/ 3541:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -368,7 +474,7 @@ function createDeploymentStatus(status) {
 
 /***/ }),
 
-/***/ 9016:
+/***/ 1370:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -400,69 +506,49 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const util_1 = __nccwpck_require__(1669);
-const GitHubDeploymentManager_1 = __nccwpck_require__(3541);
+const DemoDeploymentReview_1 = __nccwpck_require__(4622);
 const util_2 = __nccwpck_require__(4024);
 async function run() {
     try {
         await exec();
     }
     catch (err) {
-        core.debug((0, util_1.inspect)(err));
+        core.warning((0, util_1.inspect)(err));
         core.setFailed(err);
     }
 }
 run();
 async function exec() {
-    function setOutput(name, value) {
-        core.info(`${name}: ${value}`);
-        core.setOutput(name, value);
-    }
-    const inputs = {
-        owner: (0, util_2.getRequiredInput)('repository_owner'),
-        repo: (0, util_2.getRequiredInput)('repository_name'),
-    };
-    const environmentName = `${inputs.owner}/${inputs.repo}`;
-    const octokit = (0, util_2.getOctokit)();
-    const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-    core.setOutput('environment_name', environmentName);
-    const deploymentId = await deploymentManager.getEnvironmentDeploymentId(environmentName);
-    if (deploymentId) {
-        core.setOutput('environment_deployment_id', deploymentId);
-    }
-    const demoDeployment = await deploymentManager.getDemoDeployment(environmentName);
-    if (!demoDeployment) {
-        core.setFailed(`No demo deployment found for ${environmentName}`);
-    }
-    else {
-        const payload = demoDeployment.payload;
-        core.startGroup('parameters');
-        core.setOutput('terraform_variables', JSON.stringify(payload));
-        core.info('terraform parameters');
-        core.info(JSON.stringify(payload, null, 2));
-        if (payload === null || payload === void 0 ? void 0 : payload.github_context.tracking_issue) {
-            const issueId = payload.github_context.tracking_issue.id;
-            if (issueId) {
-                core.info(`tracking_issue_id: ${issueId}`);
-                core.setOutput('tracking_issue_id', issueId);
-                // Check to see if we are a duplicate per the tracking issue
-                const duplicate = await demoDeployment.isDuplicate();
-                core.info(`environment_is_duplicate: ${duplicate}`);
-                core.setOutput('environment_is_duplicate', duplicate);
-            }
+    const beforeDate = new Date((0, util_2.getRequiredInput)('before'));
+    const demoReview = await DemoDeploymentReview_1.DemoDeploymentReview.createDemoReview((0, util_2.getOctokit)(), github.context.repo, github.context.ref);
+    const allDeployments = await demoReview.getAllDemoDeployments();
+    const results = [];
+    core.startGroup('Deploy Deployments');
+    allDeployments.forEach(async (deployment) => {
+        const createdDate = new Date(deployment.getCreatedAt());
+        if (createdDate.getTime() < beforeDate.getTime()) {
+            results.push(deployment);
+            await displayDeployment(deployment);
         }
-        const templateRepo = payload === null || payload === void 0 ? void 0 : payload.github_context.template_repository;
-        if (templateRepo) {
-            setOutput('template_repository_owner', templateRepo.owner);
-            setOutput('template_repository_name', templateRepo.repo);
-            setOutput('template_repository_full_name', `${templateRepo.owner}/${templateRepo.repo}`);
-            setOutput('template_repository_ref', templateRepo.ref);
-        }
-        setOutput('demo_environment_deployment_id', `${demoDeployment.id}`);
-        setOutput('demo_environment_deployment_name', demoDeployment.environment);
-        core.endGroup();
-    }
+    });
+    core.endGroup();
+    core.startGroup('Summary');
+    core.info(`Processed ${results.length} demo deployments`);
+    core.endGroup();
+    // Might want to expose the results for further processing
 }
-//# sourceMappingURL=extract-demo-definition.js.map
+async function displayDeployment(deployment) {
+    const status = await deployment.getCurrentStatus();
+    core.info(`-------------------------------------------------------------------`);
+    core.info(`${deployment.name} id:${deployment.id}`);
+    core.info(`  created:        ${deployment.getCreatedAt()}`);
+    core.info(`  state:          ${status === null || status === void 0 ? void 0 : status.state}`);
+    core.info(`  environment:    ${status === null || status === void 0 ? void 0 : status.environment}`);
+    core.info(`  status created: ${status === null || status === void 0 ? void 0 : status.created_at}`);
+    core.info(`  tracking issue: ${deployment.getTrackingIssue()}`);
+    core.info(``);
+}
+//# sourceMappingURL=get-demos-before-time.js.map
 
 /***/ }),
 
@@ -9439,7 +9525,7 @@ module.exports = require("zlib");
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(9016);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(1370);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

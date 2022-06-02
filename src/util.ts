@@ -1,6 +1,8 @@
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 
+export type Tags = {[key: string]: string};
+
 export type Repository = {
   owner: string,
   repo: string,
@@ -41,15 +43,35 @@ export function getRepository() {
   };
 }
 
+export function getTags(inputName: string): Tags {
+  const raw: string = core.getInput(inputName)
+    , result: Tags = {}
+    ;
+
+  if (raw) {
+    const tags: string[] = raw.split(',');
+
+    tags.forEach((tag: string) => {
+      const parts =  tag.split('=');
+      if (parts.length == 2) {
+        result[parts[0]] = parts[1];
+      } else {
+        throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+      }
+    });
+  }
+  return result;
+}
+
 export function getRequiredInput(name: string) {
   return core.getInput(name, {required: true});
 }
 
 export async function repositoryExists(octokit: Octokit, repo: Repository): Promise<boolean> {
   try {
-    await octokit.repos.get(repo);
+    await octokit.rest.repos.get(repo);
     return true;
-  } catch (err) {
+  } catch (err: any) {
     if (err.status === 404) {
       return false
     }
@@ -59,9 +81,9 @@ export async function repositoryExists(octokit: Octokit, repo: Repository): Prom
 
 export async function repositoryBranchExists(octokit: Octokit, repo: Repository, ref: string): Promise<boolean> {
   try {
-    await octokit.repos.getBranch({...repo, branch: ref});
+    await octokit.rest.repos.getBranch({...repo, branch: ref});
     return true;
-  } catch (err) {
+  } catch (err: any) {
     if (err.status === 404) {
       return false
     }

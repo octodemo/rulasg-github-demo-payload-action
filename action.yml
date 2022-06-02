@@ -37,6 +37,7 @@ inputs:
 
   issue_id:
     description: An Issue id that is tracking the lifecycle of the demo repository. This is optional
+    required: false
 
   demo_config:
     description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
@@ -46,6 +47,11 @@ inputs:
     description: Prevent duplicate demo instances from being created, i.e. fail early
     default: true
     required: false
+
+  tags:
+    description: Any custom/additional tags to apply to resources created for the demo.
+    required: false
+
 
 outputs:
   template_repository_full_name:
@@ -86,6 +92,7 @@ outputs:
 
   demo_deployment_id:
     description: The id of the deployment used to track the metadata from the demo and resources.
+
 
 runs:
   using: node12

@@ -7,11 +7,9 @@
     "ms-azuretools.vscode-docker",
     "christian-kohler.npm-intellisense",
     "github.github-vscode-theme",
-    "coenraads.bracket-pair-colorizer",
   ],
   "postAttachCommand": "npm install",
   "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash",
     "telemetry.enableTelemetry": false,
     "extensions.ignoreRecommendations": true
   },
