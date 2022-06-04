@@ -67,7 +67,7 @@ export class DemoPayload {
       gcp_context: {},
       aws_context: {},
 
-      cloud: {
+      cloud_context: {
         tags: {}
       }
     };
@@ -81,7 +81,7 @@ export class DemoPayload {
     }
 
     if (this.tags) {
-      result.cloud.tags = this.tags;
+      result.cloud_context.tags = this.tags;
     }
 
     return result;
