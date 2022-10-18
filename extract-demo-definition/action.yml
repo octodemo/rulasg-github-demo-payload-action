@@ -30,10 +30,10 @@ outputs:
 
   template_repository_owner:
     description: The owner value for the template repository that the demo is built from.
-    
+
   template_repository_name:
     description: The repository short name value for the template repository that the demo is built from.
-    
+
   template_repository_full_name:
     description: The full <owner>/<repo> value for the template repository that the demo is built from.
 
@@ -50,5 +50,5 @@ outputs:
     description: Boolean flag indicating if issue/environment is a duplicate.
 
 runs:
-  using: node12
+  using: node16
   main: '../dist/extract-demo-definition/index.js'

@@ -17,5 +17,5 @@ outputs:
     description: A JSON encoded array of organization secret names that the repository needs access to.
 
 runs:
-  using: node12
+  using: node16
   main: '../dist/demo-repository-secrets/index.js'
