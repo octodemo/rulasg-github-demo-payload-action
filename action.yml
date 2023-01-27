@@ -90,13 +90,13 @@ outputs:
     description: The JSON encode terraform variables to use to drive the provisoning
 
   validation_target_repository_exists:
-    description:
+    description: A boolean indicating if the target repository already exists
 
   validation_template_repository_exists:
-    description:
+    description: A boolean indicating if the template repository exists
 
   validation_template_repository_ref_exists:
-    description:
+    description: A boolean indicating if the specified reference branch exists on the template directory
 
   demo_deployment_id:
     description: The id of the deployment used to track the metadata from the demo and resources.

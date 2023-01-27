@@ -110,7 +110,7 @@ export class DemoPayload {
     if (this.validation) {
       result['validation_template_repository_exists'] = this.validation.templateExists;
       result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-      result['validation_repository_exists'] = this.validation.targetRepoExists;
+      result['validation_target_repository_exists'] = this.validation.targetRepoExists;
     }
 
     result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`
