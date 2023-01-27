@@ -58,6 +58,9 @@ export class DemoPayload {
           ...this.template.repo,
           ref: this.template.ref,
         },
+
+        template_repository_directory_path: this.template.directory_path,
+
         target_repository: {
           ...this.target
         },
@@ -94,6 +97,7 @@ export class DemoPayload {
     result['template_repository_owner'] = this.template.repo.owner;
     result['template_repository_name'] = this.template.repo.repo;
     result['template_repository_ref'] = this.template.ref || '';
+    result['template_repository_directory_path'] = this.template.directory_path;
 
     result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
     result['repository_owner'] = this.target.owner;

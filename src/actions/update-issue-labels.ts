@@ -65,7 +65,7 @@ function getIssueNumber(): number {
 
   if (input) {
     const value = parseInt(input);
-    if (value === NaN) {
+    if (Number.isNaN(value)) {
       throw new Error(`Invalid issue number provided: '${input}'`);
     }
     return value;

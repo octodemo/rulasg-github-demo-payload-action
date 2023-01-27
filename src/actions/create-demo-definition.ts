@@ -25,6 +25,7 @@ async function exec() {
         repo: getRequiredInput('template_repository_name'),
       },
       ref: core.getInput('template_repository_ref'),
+      directory_path: core.getInput('template_repository_directory_path'),
     },
     target: {
       owner: getRequiredInput('repository_owner'),

@@ -22,6 +22,11 @@ inputs:
     default: main
     required: true
 
+  template_repository_directory_path:
+    description: The path to the template repository files on the runner
+    default: ${{ github.workspace }}/template
+    required: true
+
   repository_owner:
     description: The owner (organization) for the demo repository to be created under
     default: octodemo
@@ -65,6 +70,9 @@ outputs:
 
   template_repository_ref:
     description: The branch reference for the template repository
+
+  template_repository_directory_path:
+    description: The path to the template repository directory
 
   repository_full_name:
     description: The full name of the repository to be created
