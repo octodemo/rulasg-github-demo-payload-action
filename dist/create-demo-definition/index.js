@@ -562,7 +562,7 @@ async function exec() {
         demoConfig = undefined;
     }
     const octokit = (0, util_2.getOctokit)();
-    const templateOctokit = (0, util_2.getOctokit)((0, util_2.getRequiredInput)(inputs.github_template_token));
+    const templateOctokit = (0, util_2.getOctokit)(inputs.github_template_token);
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     const payload = new DemoPayload_1.DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
     const validation = await payload.validate(octokit, templateOctokit);

@@ -50,7 +50,7 @@ async function exec() {
   }
 
   const octokit = getOctokit();
-  const templateOctokit = getOctokit(getRequiredInput(inputs.github_template_token));
+  const templateOctokit = getOctokit(inputs.github_template_token);
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
   const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
   const validation = await payload.validate(octokit, templateOctokit);
