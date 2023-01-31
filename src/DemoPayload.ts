@@ -40,10 +40,10 @@ export class DemoPayload {
     this.tags = tags || undefined;
   }
 
-  async validate(octokit: Octokit): Promise<Validation> {
+  async validate(octokit: Octokit, templateOctokit?: Octokit): Promise<Validation> {
     this.validation = {
-      templateExists: await repositoryExists(octokit, this.template.repo),
-      templateRefExists: await repositoryBranchExists(octokit, this.template.repo, this.template.ref),
+      templateExists: await repositoryExists(templateOctokit || octokit, this.template.repo),
+      templateRefExists: await repositoryBranchExists(templateOctokit || octokit, this.template.repo, this.template.ref),
       targetRepoExists: await repositoryExists(octokit, this.target),
     }
 

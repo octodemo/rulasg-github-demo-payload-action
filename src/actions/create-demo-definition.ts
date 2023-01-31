@@ -33,8 +33,9 @@ async function exec() {
     },
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
-    prevent_duplicates: !!core.getInput('prevent_duplicates'),
+    prevent_duplicates: core.getBooleanInput('prevent_duplicates'),
     tags: getTags('tags'),
+    github_template_token: core.getInput('github_template_token'),
   };
 
   let demoConfig = undefined;
@@ -49,9 +50,10 @@ async function exec() {
   }
 
   const octokit = getOctokit();
+  const templateOctokit = getOctokit(getRequiredInput(inputs.github_template_token));
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
   const payload = new DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
-  const validation = await payload.validate(octokit);
+  const validation = await payload.validate(octokit, templateOctokit);
 
   if (inputs.prevent_duplicates) {
     if (validation.targetRepoExists) {
