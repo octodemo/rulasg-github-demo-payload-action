@@ -67,6 +67,17 @@ async function exec() {
                 }
             });
         }
+        if (data.repository) {
+            data.repository.forEach(value => {
+                const name = value.name ? value.name.trim() : undefined;
+                if (name) {
+                    if (!payload.repository) {
+                        payload.repository = [];
+                    }
+                    payload.repository.push(name);
+                }
+            });
+        }
         if (payload.organization) {
             core.startGroup('organization secrets');
             core.info(`${JSON.stringify(payload.organization, null, 2)}`);
@@ -75,6 +86,15 @@ async function exec() {
         }
         else {
             core.info('No organization secret access defined.');
+        }
+        if (payload.repository) {
+            core.startGroup('repository secrets');
+            core.info(`${JSON.stringify(payload.repository, null, 2)}`);
+            core.setOutput('repository_secrets', payload.repository);
+            core.endGroup();
+        }
+        else {
+            core.info('No repository secrets defined.');
         }
         fs.closeSync(fd);
     }
