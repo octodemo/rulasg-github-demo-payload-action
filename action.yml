@@ -95,5 +95,5 @@ outputs:
 
 
 runs:
-  using: node16
+  using: node20
   main: './dist/create-demo-definition/index.js'

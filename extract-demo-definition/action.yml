@@ -50,5 +50,5 @@ outputs:
     description: Boolean flag indicating if issue/environment is a duplicate.
 
 runs:
-  using: node16
+  using: node20
   main: '../dist/extract-demo-definition/index.js'

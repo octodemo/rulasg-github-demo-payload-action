@@ -29,5 +29,5 @@ outputs:
     description: The number of deployments to terminate
 
 runs:
-  using: node16
+  using: node20
   main: '../dist/review-demo-deployments/index.js'
