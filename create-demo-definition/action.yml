@@ -8,6 +8,11 @@ inputs:
     default: ${{ github.token }}
     required: true
 
+  github_template_token:
+    description: The GitHub token to use to validate the template repository data
+    default: ${{ github.token }}
+    required: true
+
   template_repository_owner:
     description: The demo template repository owner
     default: octodemo
@@ -20,6 +25,11 @@ inputs:
   template_repository_ref:
     description: The demo template repository branch ref for the automation files and definitions
     default: main
+    required: true
+
+  template_repository_directory_path:
+    description: The path to the template repository files on the runner
+    default: ${{ github.workspace }}/template
     required: true
 
   repository_owner:
@@ -66,6 +76,9 @@ outputs:
   template_repository_ref:
     description: The branch reference for the template repository
 
+  template_repository_directory_path:
+    description: The path to the template repository directory
+
   repository_full_name:
     description: The full name of the repository to be created
 
@@ -82,13 +95,13 @@ outputs:
     description: The JSON encode terraform variables to use to drive the provisoning
 
   validation_target_repository_exists:
-    description:
+    description: A boolean indicating if the target repository already exists
 
   validation_template_repository_exists:
-    description:
+    description: A boolean indicating if the template repository exists
 
   validation_template_repository_ref_exists:
-    description:
+    description: A boolean indicating if the specified reference branch exists on the template directory
 
   demo_deployment_id:
     description: The id of the deployment used to track the metadata from the demo and resources.

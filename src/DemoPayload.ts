@@ -40,10 +40,10 @@ export class DemoPayload {
     this.tags = tags || undefined;
   }
 
-  async validate(octokit: Octokit): Promise<Validation> {
+  async validate(octokit: Octokit, templateOctokit?: Octokit): Promise<Validation> {
     this.validation = {
-      templateExists: await repositoryExists(octokit, this.template.repo),
-      templateRefExists: await repositoryBranchExists(octokit, this.template.repo, this.template.ref),
+      templateExists: await repositoryExists(templateOctokit || octokit, this.template.repo),
+      templateRefExists: await repositoryBranchExists(templateOctokit || octokit, this.template.repo, this.template.ref),
       targetRepoExists: await repositoryExists(octokit, this.target),
     }
 
@@ -58,6 +58,9 @@ export class DemoPayload {
           ...this.template.repo,
           ref: this.template.ref,
         },
+
+        template_repository_directory_path: this.template.directory_path,
+
         target_repository: {
           ...this.target
         },
@@ -94,6 +97,7 @@ export class DemoPayload {
     result['template_repository_owner'] = this.template.repo.owner;
     result['template_repository_name'] = this.template.repo.repo;
     result['template_repository_ref'] = this.template.ref || '';
+    result['template_repository_directory_path'] = this.template.directory_path;
 
     result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
     result['repository_owner'] = this.target.owner;
@@ -106,7 +110,7 @@ export class DemoPayload {
     if (this.validation) {
       result['validation_template_repository_exists'] = this.validation.templateExists;
       result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-      result['validation_repository_exists'] = this.validation.targetRepoExists;
+      result['validation_target_repository_exists'] = this.validation.targetRepoExists;
     }
 
     result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`

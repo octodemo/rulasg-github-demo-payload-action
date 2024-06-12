@@ -144,10 +144,10 @@ class DemoPayload {
         this.demoConfig = demoConfig || undefined;
         this.tags = tags || undefined;
     }
-    async validate(octokit) {
+    async validate(octokit, templateOctokit) {
         this.validation = {
-            templateExists: await (0, util_1.repositoryExists)(octokit, this.template.repo),
-            templateRefExists: await (0, util_1.repositoryBranchExists)(octokit, this.template.repo, this.template.ref),
+            templateExists: await (0, util_1.repositoryExists)(templateOctokit || octokit, this.template.repo),
+            templateRefExists: await (0, util_1.repositoryBranchExists)(templateOctokit || octokit, this.template.repo, this.template.ref),
             targetRepoExists: await (0, util_1.repositoryExists)(octokit, this.target),
         };
         return this.validation;
@@ -160,6 +160,7 @@ class DemoPayload {
                     ...this.template.repo,
                     ref: this.template.ref,
                 },
+                template_repository_directory_path: this.template.directory_path,
                 target_repository: {
                     ...this.target
                 },
@@ -188,6 +189,7 @@ class DemoPayload {
         result['template_repository_owner'] = this.template.repo.owner;
         result['template_repository_name'] = this.template.repo.repo;
         result['template_repository_ref'] = this.template.ref || '';
+        result['template_repository_directory_path'] = this.template.directory_path;
         result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
         result['repository_owner'] = this.target.owner;
         result['repository_name'] = this.target.repo;
@@ -197,7 +199,7 @@ class DemoPayload {
         if (this.validation) {
             result['validation_template_repository_exists'] = this.validation.templateExists;
             result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-            result['validation_repository_exists'] = this.validation.targetRepoExists;
+            result['validation_target_repository_exists'] = this.validation.targetRepoExists;
         }
         result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`;
         return result;
@@ -536,6 +538,7 @@ async function exec() {
                 repo: (0, util_2.getRequiredInput)('template_repository_name'),
             },
             ref: core.getInput('template_repository_ref'),
+            directory_path: core.getInput('template_repository_directory_path'),
         },
         target: {
             owner: (0, util_2.getRequiredInput)('repository_owner'),
@@ -545,6 +548,7 @@ async function exec() {
         issue: core.getInput('issue_id'),
         prevent_duplicates: core.getBooleanInput('prevent_duplicates'),
         tags: (0, util_2.getTags)('tags'),
+        github_template_token: core.getInput('github_template_token'),
     };
     let demoConfig = undefined;
     try {
@@ -558,9 +562,10 @@ async function exec() {
         demoConfig = undefined;
     }
     const octokit = (0, util_2.getOctokit)();
+    const templateOctokit = (0, util_2.getOctokit)(inputs.github_template_token);
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     const payload = new DemoPayload_1.DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
-    const validation = await payload.validate(octokit);
+    const validation = await payload.validate(octokit, templateOctokit);
     if (inputs.prevent_duplicates) {
         if (validation.targetRepoExists) {
             // Obtain the existing deployment object and check if this issue is the same as the one stored in the tracking/communication issue
