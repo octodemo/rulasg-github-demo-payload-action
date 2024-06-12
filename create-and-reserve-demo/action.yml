@@ -1,6 +1,6 @@
-name: 'GitHub Demo Definition'
+name: Create and reserve Demo
 description: Builds a demo definition providing it as outputs and registers a deployment to track the demo lifecycle.
-author: 'Peter Murray'
+author: Peter Murray
 
 inputs:
   github_token:
@@ -27,8 +27,8 @@ inputs:
     default: octodemo
     required: true
 
-  repository_name:
-    description: The name of the demo repository to create
+  potential_repository_names:
+    description: The names provided for the repository to be created, one or more strings separated by commas
     required: true
 
   user:

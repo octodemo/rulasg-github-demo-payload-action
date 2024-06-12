@@ -100,6 +100,120 @@ exports.DemoDeployment = DemoDeployment;
 
 /***/ }),
 
+/***/ 5233:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DemoPayload = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const util_1 = __nccwpck_require__(4024);
+class DemoPayload {
+    constructor(target, template, user, issue, demoConfig, tags) {
+        this.target = target;
+        this.template = template;
+        this.user = user || github.context.actor;
+        if (issue) {
+            this.linkedIssueId = parseInt(issue);
+        }
+        this.demoConfig = demoConfig || undefined;
+        this.tags = tags || undefined;
+    }
+    async validate(octokit) {
+        this.validation = {
+            templateExists: await (0, util_1.repositoryExists)(octokit, this.template.repo),
+            templateRefExists: await (0, util_1.repositoryBranchExists)(octokit, this.template.repo, this.template.ref),
+            targetRepoExists: await (0, util_1.repositoryExists)(octokit, this.target),
+        };
+        return this.validation;
+    }
+    getTerraformVariables() {
+        const result = {
+            github_context: {
+                actor: this.user,
+                template_repository: {
+                    ...this.template.repo,
+                    ref: this.template.ref,
+                },
+                target_repository: {
+                    ...this.target
+                },
+            },
+            azure_context: {},
+            gcp_context: {},
+            aws_context: {},
+            cloud_context: {
+                tags: {}
+            }
+        };
+        if (this.linkedIssueId) {
+            result.github_context['tracking_issue'] = { id: this.linkedIssueId };
+        }
+        if (this.demoConfig) {
+            result.github_context['demo_config'] = this.demoConfig;
+        }
+        if (this.tags) {
+            result.cloud_context.tags = this.tags;
+        }
+        return result;
+    }
+    getOutputs() {
+        const result = {};
+        result['template_repository_full_name'] = `${this.template.repo.owner}/${this.template.repo.repo}`;
+        result['template_repository_owner'] = this.template.repo.owner;
+        result['template_repository_name'] = this.template.repo.repo;
+        result['template_repository_ref'] = this.template.ref || '';
+        result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
+        result['repository_owner'] = this.target.owner;
+        result['repository_name'] = this.target.repo;
+        if (this.linkedIssueId) {
+            result['tracking_issue'] = this.linkedIssueId;
+        }
+        if (this.validation) {
+            result['validation_template_repository_exists'] = this.validation.templateExists;
+            result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
+            result['validation_repository_exists'] = this.validation.targetRepoExists;
+        }
+        result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`;
+        return result;
+    }
+    setActionsOutputs() {
+        const outputs = this.getOutputs();
+        Object.keys(outputs).forEach(key => {
+            core.setOutput(key, outputs[key]);
+        });
+    }
+}
+exports.DemoPayload = DemoPayload;
+//# sourceMappingURL=DemoPayload.js.map
+
+/***/ }),
+
 /***/ 3541:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -368,7 +482,7 @@ function createDeploymentStatus(status) {
 
 /***/ }),
 
-/***/ 69:
+/***/ 7079:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -400,8 +514,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const util_1 = __nccwpck_require__(3837);
-const constants_1 = __nccwpck_require__(5105);
+const DemoPayload_1 = __nccwpck_require__(5233);
 const GitHubDeploymentManager_1 = __nccwpck_require__(3541);
+const constants_1 = __nccwpck_require__(5105);
 const util_2 = __nccwpck_require__(4024);
 async function run() {
     try {
@@ -414,95 +529,102 @@ async function run() {
 }
 run();
 async function exec() {
-    var _a, _b, _c;
     const inputs = {
-        id: parseInt((0, util_2.getRequiredInput)('id')),
-        run_id: (0, util_2.getRequiredInput)('actions_run_id'),
-        status: (0, util_2.getRequiredInput)('lifecycle_status')
+        template: {
+            repo: {
+                owner: (0, util_2.getRequiredInput)('template_repository_owner'),
+                repo: (0, util_2.getRequiredInput)('template_repository_name'),
+            },
+            ref: core.getInput('template_repository_ref'),
+        },
+        target: {
+            owner: (0, util_2.getRequiredInput)('repository_owner'),
+        },
+        user: core.getInput('user'),
+        issue: core.getInput('issue_id'),
+        tags: (0, util_2.getTags)('tags'),
     };
-    const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, (0, util_2.getOctokit)(), github.context.ref);
-    const deployment = await deploymentManager.getDemoDeploymentById(inputs.id);
-    const currentDeploymentState = await deployment.getCurrentStatus();
-    if ((currentDeploymentState === null || currentDeploymentState === void 0 ? void 0 : currentDeploymentState.state) === 'success') {
-        const status = validateStatus(inputs.status);
-        const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
-        core.info(`Updating demo deployment ${deployment.id} status...`);
-        await deploymentManager.updateDeploymentStatus(deployment.id, 'success', status.demoState, logUrl);
-        core.info('done.');
-        const issueId = deployment.getTrackingIssue();
-        if (issueId) {
-            core.info(`Updating issue ${issueId} labels to track state...`);
-            if (((_a = status === null || status === void 0 ? void 0 : status.labelsAdd) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-                await deploymentManager.addIssueLabels(issueId, ...status.labelsAdd);
+    let demoConfig = undefined;
+    try {
+        let config = core.getInput('demo_config');
+        if (config && config.trim().length > 0) {
+            demoConfig = config ? JSON.parse(config) : undefined;
+        }
+    }
+    catch (err) {
+        core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
+        demoConfig = undefined;
+    }
+    const octokit = (0, util_2.getOctokit)();
+    const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
+    const potentialNames = loadNames((0, util_2.getRequiredInput)('potential_repository_names'));
+    const potentialNamesCount = potentialNames.length;
+    core.startGroup(`Finding a valid repository for the demo deployment`);
+    let demoDeployment = undefined;
+    let payload = undefined;
+    let nameIndex = 0;
+    do {
+        const potentialRepositoryName = potentialNames[nameIndex];
+        const repo = {
+            owner: inputs.target.owner,
+            repo: potentialRepositoryName
+        };
+        core.info(`checking repository exists '${repo.owner}/${repo.repo}'`);
+        const exists = await (0, util_2.repositoryExists)(octokit, repo);
+        if (exists) {
+            core.info(`  already exists, skipping...`);
+        }
+        else {
+            // Now check and verify if there is an existing deployment object sitting in place for this repoisitory, as we might have another process running in parallel creating one
+            // or another process deleting one, but the deployment is not gone yet.
+            // There could be a secondary workflow executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
+            const existingDeployment = await deploymentManager.getDemoDeployment(`${inputs.target.owner}/${potentialRepositoryName}`);
+            if (existingDeployment) {
+                core.info(`  reposity deos not exist, but an existing deployment was found, skipping...`);
             }
-            if (((_b = status === null || status === void 0 ? void 0 : status.labelsRemove) === null || _b === void 0 ? void 0 : _b.length) > 0) {
-                await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
+            else {
+                const targetRepo = {
+                    owner: inputs.target.owner,
+                    repo: potentialRepositoryName,
+                };
+                payload = new DemoPayload_1.DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
+                const validation = await payload.validate(octokit);
+                if (validation.templateExists && validation.templateRefExists && !validation.targetRepoExists) {
+                    // Provide the outputs to the workflow
+                    payload.setActionsOutputs();
+                    demoDeployment = await deploymentManager.createDemoDeployment(`${payload.target.owner}/${payload.target.repo}`, payload.getTerraformVariables());
+                    core.info(`  reserved repository`);
+                }
             }
-            const actor = (_c = deployment.payload) === null || _c === void 0 ? void 0 : _c.github_context.actor;
-            if (status.demoState === constants_1.DEMO_STATES.marked_warning) {
-                await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
-            }
-            else if (status.demoState === constants_1.DEMO_STATES.marked_termination) {
-                await deploymentManager.addIssueComment(issueId, getTerminationMessage(actor));
-            }
-            core.info('done.');
+        }
+        // Increment the name index to try another one
+        nameIndex++;
+    } while (demoDeployment === undefined && nameIndex < potentialNamesCount);
+    core.endGroup();
+    if (!demoDeployment) {
+        core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}: ${JSON.stringify(potentialNames)}'`);
+    }
+    else {
+        core.setOutput('demo_deployment_id', demoDeployment.id);
+        // Show the demo deployment in progress
+        await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', constants_1.DEMO_STATES.provisioning);
+        core.startGroup('Demo Deployment');
+        core.info(`id = ${demoDeployment.id}`);
+        core.endGroup();
+        if (payload) {
+            core.startGroup('Action outputs');
+            core.info(JSON.stringify(payload.getOutputs(), null, 2));
+            core.endGroup();
+            core.startGroup('Terraform variables');
+            core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
+            core.endGroup();
         }
     }
 }
-function getWarningMessage(actor) {
-    let prefix = 'T';
-    if (actor) {
-        prefix = `:wave: @${actor}, t`;
-    }
-    return `${prefix}he demo has been open for a while now. Please consider closing this issue to remove the deployment environment if no longer required.`;
+function loadNames(value) {
+    return value.split(',').map(value => value.trim());
 }
-function getTerminationMessage(actor) {
-    let prefix = 'T';
-    if (actor) {
-        prefix = `:wave: @${actor}, t`;
-    }
-    return `
-  ${prefix}he demo has been open for a long time and is not marked for hold.
-
-  Please close this issue to release the resources, or place on hold if you need this environment to persist.
-
-  :red_circle: If you take no action the demo will be destroyed automatically. :red_circle:
-  `;
-}
-function validateStatus(status) {
-    if (status === constants_1.LIFECYCLE_STATES.hold) {
-        return {
-            demoState: constants_1.DEMO_STATES.marked_hold,
-            labelsAdd: [constants_1.DEMO_STATES.marked_hold],
-            labelsRemove: [constants_1.DEMO_STATES.marked_warning, constants_1.DEMO_STATES.marked_termination],
-        };
-    }
-    else if (status === constants_1.LIFECYCLE_STATES.termination) {
-        return {
-            demoState: constants_1.DEMO_STATES.marked_termination,
-            labelsAdd: [constants_1.DEMO_STATES.marked_termination],
-            labelsRemove: [],
-        };
-    }
-    else if (status === constants_1.LIFECYCLE_STATES.warning) {
-        return {
-            demoState: constants_1.DEMO_STATES.marked_warning,
-            labelsAdd: [constants_1.DEMO_STATES.marked_warning],
-            labelsRemove: [],
-        };
-    }
-    else if (status === constants_1.LIFECYCLE_STATES.unhold) {
-        return {
-            demoState: '',
-            labelsAdd: [],
-            labelsRemove: [constants_1.DEMO_STATES.marked_hold],
-        };
-    }
-    else {
-        throw new Error(`Specified state '${status}' is not supported`);
-    }
-}
-//# sourceMappingURL=demo-lifecycle-status.js.map
+//# sourceMappingURL=create-and-reserve-demo.js.map
 
 /***/ }),
 
@@ -34361,7 +34483,7 @@ module.exports = parseParams
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(69);
+/******/ 	var __webpack_exports__ = __nccwpck_require__(7079);
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

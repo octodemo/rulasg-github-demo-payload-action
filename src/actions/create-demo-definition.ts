@@ -32,7 +32,7 @@ async function exec() {
     },
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
-    prevent_duplicates: !!core.getInput('prevent_duplicates'),
+    prevent_duplicates: core.getBooleanInput('prevent_duplicates'),
     tags: getTags('tags'),
   };
 

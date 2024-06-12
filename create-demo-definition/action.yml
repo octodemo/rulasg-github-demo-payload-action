@@ -1,0 +1,99 @@
+name: 'GitHub Demo Definition'
+description: Builds a demo definition providing it as outputs and registers a deployment to track the demo lifecycle.
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use to validate the provided data
+    default: ${{ github.token }}
+    required: true
+
+  template_repository_owner:
+    description: The demo template repository owner
+    default: octodemo
+    required: true
+
+  template_repository_name:
+    description: The demo template repository name
+    required: true
+
+  template_repository_ref:
+    description: The demo template repository branch ref for the automation files and definitions
+    default: main
+    required: true
+
+  repository_owner:
+    description: The owner (organization) for the demo repository to be created under
+    default: octodemo
+    required: true
+
+  repository_name:
+    description: The name of the demo repository to create
+    required: true
+
+  user:
+    description: The user that is requesting the demo
+    required: false
+
+  issue_id:
+    description: An Issue id that is tracking the lifecycle of the demo repository. This is optional
+    required: false
+
+  demo_config:
+    description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
+    required: false
+
+  prevent_duplicates:
+    description: Prevent duplicate demo instances from being created, i.e. fail early
+    default: true
+    required: false
+
+  tags:
+    description: Any custom/additional tags to apply to resources created for the demo.
+    required: false
+
+
+outputs:
+  template_repository_full_name:
+    description: The full name of the template repository
+
+  template_repository_owner:
+    description: The owner for the template repository
+
+  template_repository_name:
+    description: The name for the template repository
+
+  template_repository_ref:
+    description: The branch reference for the template repository
+
+  repository_full_name:
+    description: The full name of the repository to be created
+
+  repository_owner:
+    description: The owner of the repoisitory to be created
+
+  repository_name:
+    description: The name of the repository to be created
+
+  tracking_issue:
+    description: The GitHub issue id for the tracking issue if one was provided
+
+  terraform_variables:
+    description: The JSON encode terraform variables to use to drive the provisoning
+
+  validation_target_repository_exists:
+    description:
+
+  validation_template_repository_exists:
+    description:
+
+  validation_template_repository_ref_exists:
+    description:
+
+  demo_deployment_id:
+    description: The id of the deployment used to track the metadata from the demo and resources.
+
+
+runs:
+  using: node20
+  main: './dist/create-and-reserve-demo/index.js'

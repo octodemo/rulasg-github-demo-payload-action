@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "build:create-demo-definition": "ncc build lib/actions/create-demo-definition.js -o dist/create-demo-definition --source-map",
+    "build:create-and-reserve-demo": "ncc build lib/actions/create-and-reserve-demo.js -o dist/create-and-reserve-demo --source-map",
     "build:extract-demo-definition": "ncc build lib/actions/extract-demo-definition.js -o dist/extract-demo-definition --source-map",
     "build:deactivate-demo-definition": "ncc build lib/actions/deactivate-demo-definition.js -o dist/deactivate-demo-definition --source-map",
     "build:demo-repository-secrets": "ncc build lib/actions/demo-repository-secrets.js -o dist/demo-repository-secrets --source-map",
@@ -16,7 +17,8 @@
     "build:review-demo-deployments": "ncc build lib/actions/review-demo-deployments.js -o dist/review-demo-deployments --source-map",
     "build:get-demos-to-terminate": "ncc build lib/actions/get-demos-to-terminate.js -o dist/get-demos-to-terminate --source-map",
     "build:get-demos-before-time": "ncc build lib/actions/get-demos-before-time.js -o dist/get-demos-before-time --source-map",
-    "package": "npm run build && npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate && npm run build:get-demos-before-time",
+    "build:actions": "npm run build:create-demo-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate && npm run build:get-demos-before-time && npm run build:create-and-reserve-demo",
+    "package": "npm run build && npm run build:actions",
     "test": "mocha --recursive -r ts-node/register \"src/**/*.test.ts\""
   },
   "repository": {
@@ -31,9 +33,9 @@
   },
   "homepage": "https://github.com/peter-murray/github-demo-payload-action#readme",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/github": "^5.0.1",
-    "@octokit/rest": "^18.12.0"
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0",
+    "@octokit/rest": "^20.1.1"
   },
   "devDependencies": {
     "@types/mocha": "^9.1.1",
