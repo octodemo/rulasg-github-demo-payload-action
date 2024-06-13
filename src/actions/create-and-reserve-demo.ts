@@ -37,6 +37,7 @@ async function exec() {
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
     tags: getTags('tags'),
+    github_template_token: core.getInput('github_template_token'),
   };
 
   let demoConfig = undefined;
@@ -50,10 +51,11 @@ async function exec() {
     demoConfig = undefined;
   }
 
-  const octokit = getOctokit(core.getInput('github_template_token'));
+  const octokit = getOctokit();
+  const templateOctokit = getOctokit(inputs.github_template_token);
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
-  const templateValid = await inputs.template.isValid(octokit);
+  const templateValid = await inputs.template.isValid(templateOctokit);
   if (!templateValid) {
     core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
     return;
@@ -94,7 +96,7 @@ async function exec() {
         };
         payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
 
-        const validation = await payload.validate(octokit);
+        const validation = await payload.validate(octokit, templateOctokit);
         if (validation.templateExists && !validation.targetRepositoryExists) {
           // Provide the outputs to the workflow
           payload.setActionsOutputs();

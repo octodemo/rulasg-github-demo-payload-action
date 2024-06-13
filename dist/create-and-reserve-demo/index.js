@@ -427,6 +427,7 @@ async function exec() {
         user: core.getInput('user'),
         issue: core.getInput('issue_id'),
         tags: (0, util_2.getTags)('tags'),
+        github_template_token: core.getInput('github_template_token'),
     };
     let demoConfig = undefined;
     try {
@@ -439,9 +440,10 @@ async function exec() {
         core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
         demoConfig = undefined;
     }
-    const octokit = (0, util_2.getOctokit)(core.getInput('github_template_token'));
+    const octokit = (0, util_2.getOctokit)();
+    const templateOctokit = (0, util_2.getOctokit)(inputs.github_template_token);
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
-    const templateValid = await inputs.template.isValid(octokit);
+    const templateValid = await inputs.template.isValid(templateOctokit);
     if (!templateValid) {
         core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
         return;
@@ -477,7 +479,7 @@ async function exec() {
                     repo: potentialRepositoryName,
                 };
                 payload = new DemoPayload_1.DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
-                const validation = await payload.validate(octokit);
+                const validation = await payload.validate(octokit, templateOctokit);
                 if (validation.templateExists && !validation.targetRepositoryExists) {
                     // Provide the outputs to the workflow
                     payload.setActionsOutputs();
