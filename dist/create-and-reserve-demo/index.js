@@ -441,6 +441,10 @@ async function exec() {
     }
     const octokit = (0, util_2.getOctokit)();
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
+    if (await inputs.template.isValid(octokit)) {
+        core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+        return;
+    }
     const potentialNames = loadNames((0, util_2.getRequiredInput)('potential_repository_names'));
     const potentialNamesCount = potentialNames.length;
     core.startGroup(`Finding a valid repository for the demo deployment`);
@@ -664,6 +668,9 @@ class RepositoryDemoTemplate {
         this.repo = repo;
         this.ref = ref;
         this.directoryPath = directoryPath;
+    }
+    get name() {
+        return `${this.repo.owner}/${this.repo.repo}:${this.ref}`;
     }
     async isValid(octokit) {
         if (!octokit) {

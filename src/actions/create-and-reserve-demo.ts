@@ -53,6 +53,12 @@ async function exec() {
   const octokit = getOctokit();
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
+
+  if (await inputs.template.isValid(octokit)) {
+    core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+    return
+  }
+
   const potentialNames = loadNames(getRequiredInput('potential_repository_names'));
   const potentialNamesCount = potentialNames.length;
 

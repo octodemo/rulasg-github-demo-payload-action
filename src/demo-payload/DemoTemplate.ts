@@ -12,6 +12,8 @@ export interface DemoTemplate {
   getTerraformVariablesObject(): object
 
   appendTemplateOutputValues(result: object);
+
+  get name(): string
 }
 
 
@@ -25,6 +27,10 @@ export class RepositoryDemoTemplate implements DemoTemplate {
     this.repo = repo;
     this.ref = ref;
     this.directoryPath = directoryPath;
+  }
+
+  get name(): string {
+    return `${this.repo.owner}/${this.repo.repo}:${this.ref}`;
   }
 
   async isValid(octokit?: Octokit) {

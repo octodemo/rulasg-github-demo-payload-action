@@ -658,6 +658,9 @@ class RepositoryDemoTemplate {
         this.ref = ref;
         this.directoryPath = directoryPath;
     }
+    get name() {
+        return `${this.repo.owner}/${this.repo.repo}:${this.ref}`;
+    }
     async isValid(octokit) {
         if (!octokit) {
             throw new Error(`An octokit is required to test the validity of a repository template reference`);
