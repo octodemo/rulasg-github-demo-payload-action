@@ -1,21 +1,20 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import { Template } from './types';
-import { Repository, repositoryBranchExists, repositoryExists, Tags } from './util';
+import { Repository, repositoryExists, Tags } from '../util';
+import { DemoTemplate } from './DemoTemplate';
 
 
 export type Validation = {
-  templateExists: boolean,
-  templateRefExists: boolean,
-  targetRepoExists: boolean,
+  targetRepositoryExists: boolean,
+  templateExists: boolean
 }
 
 export class DemoPayload {
 
   readonly target: Repository;
 
-  readonly template: Template;
+  readonly template: DemoTemplate;
 
   readonly user: string;
 
@@ -27,7 +26,7 @@ export class DemoPayload {
 
   private validation?: Validation;
 
-  constructor(target: Repository, template: Template, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
+  constructor(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
     this.target = target;
     this.template = template;
     this.user = user || github.context.actor;
@@ -41,10 +40,11 @@ export class DemoPayload {
   }
 
   async validate(octokit: Octokit, templateOctokit?: Octokit): Promise<Validation> {
+    const templateReferenceIsValid = await this.template.isValid(templateOctokit || octokit);
+
     this.validation = {
-      templateExists: await repositoryExists(templateOctokit || octokit, this.template.repo),
-      templateRefExists: await repositoryBranchExists(templateOctokit || octokit, this.template.repo, this.template.ref),
-      targetRepoExists: await repositoryExists(octokit, this.target),
+      templateExists: templateReferenceIsValid,
+      targetRepositoryExists: await repositoryExists(octokit, this.target),
     }
 
     return this.validation;
@@ -54,12 +54,8 @@ export class DemoPayload {
     const result = {
       github_context: {
         actor: this.user,
-        template_repository: {
-          ...this.template.repo,
-          ref: this.template.ref,
-        },
-
-        template_repository_directory_path: this.template.directory_path,
+        template_repository: this.template.getTerraformVariablesObject(),
+        template_repository_directory_path: this.template.getDirectoryPath(),
 
         target_repository: {
           ...this.target
@@ -92,12 +88,7 @@ export class DemoPayload {
 
   getOutputs(): { [key: string]: any } {
     const result = {};
-
-    result['template_repository_full_name'] = `${this.template.repo.owner}/${this.template.repo.repo}`;
-    result['template_repository_owner'] = this.template.repo.owner;
-    result['template_repository_name'] = this.template.repo.repo;
-    result['template_repository_ref'] = this.template.ref || '';
-    result['template_repository_directory_path'] = this.template.directory_path;
+    this.template.appendTemplateOutputValues(result);
 
     result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
     result['repository_owner'] = this.target.owner;
@@ -108,9 +99,8 @@ export class DemoPayload {
     }
 
     if (this.validation) {
-      result['validation_template_repository_exists'] = this.validation.templateExists;
-      result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-      result['validation_target_repository_exists'] = this.validation.targetRepoExists;
+      result['validation_template_exists'] = this.validation.templateExists;
+      result['validation_target_repository_exists'] = this.validation.targetRepositoryExists;
     }
 
     result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`

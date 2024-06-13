@@ -2,10 +2,11 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
 import { DemoDeployment } from '../DemoDeployment';
-import { DemoPayload } from '../DemoPayload';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { DEMO_STATES } from '../constants';
 import { getOctokit, getRequiredInput, getTags, repositoryExists } from '../util';
+import { RepositoryDemoTemplate } from '../demo-payload/DemoTemplate';
+import { DemoPayload } from '../demo-payload/DemoPayload';
 
 async function run() {
   try {
@@ -20,14 +21,14 @@ run();
 
 async function exec() {
   const inputs = {
-    template: {
-      repo: {
+    template: new RepositoryDemoTemplate(
+      {
         owner: getRequiredInput('template_repository_owner'),
         repo: getRequiredInput('template_repository_name'),
       },
-      ref: core.getInput('template_repository_ref'),
-      directory_path: core.getInput('template_repository_directory_path'),
-    },
+      core.getInput('template_repository_ref'),
+      core.getInput('template_repository_directory_path')
+    ),
 
     target: {
       owner: getRequiredInput('repository_owner'),
@@ -79,7 +80,7 @@ async function exec() {
       const existingDeployment = await deploymentManager.getDemoDeployment(`${inputs.target.owner}/${potentialRepositoryName}`);
 
       if (existingDeployment) {
-        core.info(`  reposity deos not exist, but an existing deployment was found, skipping...`);
+        core.info(`  repository does not exist, but an existing deployment was found, skipping...`);
       } else {
         const targetRepo = {
           owner: inputs.target.owner,
@@ -88,7 +89,7 @@ async function exec() {
         payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
 
         const validation = await payload.validate(octokit);
-        if (validation.templateExists && validation.templateRefExists && !validation.targetRepoExists) {
+        if (validation.templateExists && !validation.targetRepositoryExists) {
           // Provide the outputs to the workflow
           payload.setActionsOutputs();
 
@@ -97,6 +98,8 @@ async function exec() {
             payload.getTerraformVariables()
           );
           core.info(`  reserved repository`);
+        } else {
+          core.info(`  failed validation (${JSON.stringify(validation)}), skipping`);
         }
       }
     }
@@ -107,7 +110,7 @@ async function exec() {
   core.endGroup();
 
   if (!demoDeployment) {
-    core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}: ${JSON.stringify(potentialNames)}'`);
+    core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
   } else {
     core.setOutput('demo_deployment_id', demoDeployment.id);
 

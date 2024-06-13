@@ -3,12 +3,6 @@ export type Repository = {
   repo: string
 }
 
-export type Template = {
-  repo: Repository,
-  ref: string,
-  directory_path: string
-}
-
 export type DeploymentState = 'error' | 'failure' | 'inactive' | 'in_progress' | 'queued' | 'pending' | 'success'
 
 

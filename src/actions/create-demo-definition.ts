@@ -2,9 +2,10 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
 import { DEMO_STATES } from '../constants';
-import { DemoPayload } from '../DemoPayload';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { getOctokit, getRequiredInput, getTags } from '../util';
+import { RepositoryDemoTemplate } from '../demo-payload/DemoTemplate';
+import { DemoPayload } from '../demo-payload/DemoPayload';
 
 async function run() {
   try {
@@ -19,14 +20,14 @@ run();
 
 async function exec() {
   const inputs = {
-    template: {
-      repo: {
+    template: new RepositoryDemoTemplate(
+      {
         owner: getRequiredInput('template_repository_owner'),
         repo: getRequiredInput('template_repository_name'),
       },
-      ref: core.getInput('template_repository_ref'),
-      directory_path: core.getInput('template_repository_directory_path'),
-    },
+      core.getInput('template_repository_ref'),
+      core.getInput('template_repository_directory_path')
+    ),
     target: {
       owner: getRequiredInput('repository_owner'),
       repo: getRequiredInput('repository_name'),
@@ -56,7 +57,7 @@ async function exec() {
   const validation = await payload.validate(octokit, templateOctokit);
 
   if (inputs.prevent_duplicates) {
-    if (validation.targetRepoExists) {
+    if (validation.targetRepositoryExists) {
       // Obtain the existing deployment object and check if this issue is the same as the one stored in the tracking/communication issue
       // if so the issue ticket has been re-opened and this is not technically a duplicate, although there could be a secondary workflow
       // executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.

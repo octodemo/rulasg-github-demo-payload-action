@@ -100,122 +100,6 @@ exports.DemoDeployment = DemoDeployment;
 
 /***/ }),
 
-/***/ 5233:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DemoPayload = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const github = __importStar(__nccwpck_require__(5438));
-const util_1 = __nccwpck_require__(4024);
-class DemoPayload {
-    constructor(target, template, user, issue, demoConfig, tags) {
-        this.target = target;
-        this.template = template;
-        this.user = user || github.context.actor;
-        if (issue) {
-            this.linkedIssueId = parseInt(issue);
-        }
-        this.demoConfig = demoConfig || undefined;
-        this.tags = tags || undefined;
-    }
-    async validate(octokit, templateOctokit) {
-        this.validation = {
-            templateExists: await (0, util_1.repositoryExists)(templateOctokit || octokit, this.template.repo),
-            templateRefExists: await (0, util_1.repositoryBranchExists)(templateOctokit || octokit, this.template.repo, this.template.ref),
-            targetRepoExists: await (0, util_1.repositoryExists)(octokit, this.target),
-        };
-        return this.validation;
-    }
-    getTerraformVariables() {
-        const result = {
-            github_context: {
-                actor: this.user,
-                template_repository: {
-                    ...this.template.repo,
-                    ref: this.template.ref,
-                },
-                template_repository_directory_path: this.template.directory_path,
-                target_repository: {
-                    ...this.target
-                },
-            },
-            azure_context: {},
-            gcp_context: {},
-            aws_context: {},
-            cloud_context: {
-                tags: {}
-            }
-        };
-        if (this.linkedIssueId) {
-            result.github_context['tracking_issue'] = { id: this.linkedIssueId };
-        }
-        if (this.demoConfig) {
-            result.github_context['demo_config'] = this.demoConfig;
-        }
-        if (this.tags) {
-            result.cloud_context.tags = this.tags;
-        }
-        return result;
-    }
-    getOutputs() {
-        const result = {};
-        result['template_repository_full_name'] = `${this.template.repo.owner}/${this.template.repo.repo}`;
-        result['template_repository_owner'] = this.template.repo.owner;
-        result['template_repository_name'] = this.template.repo.repo;
-        result['template_repository_ref'] = this.template.ref || '';
-        result['template_repository_directory_path'] = this.template.directory_path;
-        result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
-        result['repository_owner'] = this.target.owner;
-        result['repository_name'] = this.target.repo;
-        if (this.linkedIssueId) {
-            result['tracking_issue'] = this.linkedIssueId;
-        }
-        if (this.validation) {
-            result['validation_template_repository_exists'] = this.validation.templateExists;
-            result['validation_template_repository_ref_exists'] = this.validation.templateRefExists;
-            result['validation_target_repository_exists'] = this.validation.targetRepoExists;
-        }
-        result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`;
-        return result;
-    }
-    setActionsOutputs() {
-        const outputs = this.getOutputs();
-        Object.keys(outputs).forEach(key => {
-            core.setOutput(key, outputs[key]);
-        });
-    }
-}
-exports.DemoPayload = DemoPayload;
-//# sourceMappingURL=DemoPayload.js.map
-
-/***/ }),
-
 /***/ 3541:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -517,9 +401,10 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const util_1 = __nccwpck_require__(3837);
 const constants_1 = __nccwpck_require__(5105);
-const DemoPayload_1 = __nccwpck_require__(5233);
 const GitHubDeploymentManager_1 = __nccwpck_require__(3541);
 const util_2 = __nccwpck_require__(4024);
+const DemoTemplate_1 = __nccwpck_require__(6914);
+const DemoPayload_1 = __nccwpck_require__(4586);
 async function run() {
     try {
         await exec();
@@ -532,14 +417,10 @@ async function run() {
 run();
 async function exec() {
     const inputs = {
-        template: {
-            repo: {
-                owner: (0, util_2.getRequiredInput)('template_repository_owner'),
-                repo: (0, util_2.getRequiredInput)('template_repository_name'),
-            },
-            ref: core.getInput('template_repository_ref'),
-            directory_path: core.getInput('template_repository_directory_path'),
-        },
+        template: new DemoTemplate_1.RepositoryDemoTemplate({
+            owner: (0, util_2.getRequiredInput)('template_repository_owner'),
+            repo: (0, util_2.getRequiredInput)('template_repository_name'),
+        }, core.getInput('template_repository_ref'), core.getInput('template_repository_directory_path')),
         target: {
             owner: (0, util_2.getRequiredInput)('repository_owner'),
             repo: (0, util_2.getRequiredInput)('repository_name'),
@@ -567,7 +448,7 @@ async function exec() {
     const payload = new DemoPayload_1.DemoPayload(inputs.target, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
     const validation = await payload.validate(octokit, templateOctokit);
     if (inputs.prevent_duplicates) {
-        if (validation.targetRepoExists) {
+        if (validation.targetRepositoryExists) {
             // Obtain the existing deployment object and check if this issue is the same as the one stored in the tracking/communication issue
             // if so the issue ticket has been re-opened and this is not technically a duplicate, although there could be a secondary workflow
             // executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
@@ -652,6 +533,168 @@ exports.LIFECYCLE_STATES = {
     unhold: 'unhold',
 };
 //# sourceMappingURL=constants.js.map
+
+/***/ }),
+
+/***/ 4586:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DemoPayload = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github = __importStar(__nccwpck_require__(5438));
+const util_1 = __nccwpck_require__(4024);
+class DemoPayload {
+    constructor(target, template, user, issue, demoConfig, tags) {
+        this.target = target;
+        this.template = template;
+        this.user = user || github.context.actor;
+        if (issue) {
+            this.linkedIssueId = parseInt(issue);
+        }
+        this.demoConfig = demoConfig || undefined;
+        this.tags = tags || undefined;
+    }
+    async validate(octokit, templateOctokit) {
+        const templateReferenceIsValid = await this.template.isValid(templateOctokit || octokit);
+        this.validation = {
+            templateExists: templateReferenceIsValid,
+            targetRepositoryExists: await (0, util_1.repositoryExists)(octokit, this.target),
+        };
+        return this.validation;
+    }
+    getTerraformVariables() {
+        const result = {
+            github_context: {
+                actor: this.user,
+                template_repository: this.template.getTerraformVariablesObject(),
+                template_repository_directory_path: this.template.getDirectoryPath(),
+                target_repository: {
+                    ...this.target
+                },
+            },
+            azure_context: {},
+            gcp_context: {},
+            aws_context: {},
+            cloud_context: {
+                tags: {}
+            }
+        };
+        if (this.linkedIssueId) {
+            result.github_context['tracking_issue'] = { id: this.linkedIssueId };
+        }
+        if (this.demoConfig) {
+            result.github_context['demo_config'] = this.demoConfig;
+        }
+        if (this.tags) {
+            result.cloud_context.tags = this.tags;
+        }
+        return result;
+    }
+    getOutputs() {
+        const result = {};
+        this.template.appendTemplateOutputValues(result);
+        result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
+        result['repository_owner'] = this.target.owner;
+        result['repository_name'] = this.target.repo;
+        if (this.linkedIssueId) {
+            result['tracking_issue'] = this.linkedIssueId;
+        }
+        if (this.validation) {
+            result['validation_template_exists'] = this.validation.templateExists;
+            result['validation_target_repository_exists'] = this.validation.targetRepositoryExists;
+        }
+        result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`;
+        return result;
+    }
+    setActionsOutputs() {
+        const outputs = this.getOutputs();
+        Object.keys(outputs).forEach(key => {
+            core.setOutput(key, outputs[key]);
+        });
+    }
+}
+exports.DemoPayload = DemoPayload;
+//# sourceMappingURL=DemoPayload.js.map
+
+/***/ }),
+
+/***/ 6914:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.RepositoryDemoTemplate = void 0;
+const util_1 = __nccwpck_require__(4024);
+class RepositoryDemoTemplate {
+    constructor(repo, ref = 'main', directoryPath = '') {
+        this.repo = repo;
+        this.ref = ref;
+        this.directoryPath = directoryPath;
+    }
+    async isValid(octokit) {
+        if (!octokit) {
+            throw new Error(`An octokit is required to test the validity of a repository template reference`);
+        }
+        const repoExists = await (0, util_1.repositoryExists)(octokit, this.repo);
+        if (repoExists) {
+            return await (0, util_1.repositoryBranchExists)(octokit, this.repo, this.ref);
+        }
+        return false;
+    }
+    getDirectoryPath() {
+        return this.directoryPath;
+    }
+    getTerraformVariablesObject() {
+        return {
+            ...this.repo,
+            ref: this.ref
+        };
+    }
+    appendTemplateOutputValues(result) {
+        result['template_repository_full_name'] = `${this.repo.owner}/${this.repo.repo}`;
+        result['template_repository_owner'] = this.repo.owner;
+        result['template_repository_name'] = this.repo.repo;
+        result['template_repository_ref'] = this.ref || '';
+        result['template_repository_directory_path'] = this.directoryPath;
+    }
+}
+exports.RepositoryDemoTemplate = RepositoryDemoTemplate;
+// export type ContainerTemplate = Template & {
+//   registry: string,
+//   name: string,
+//   version: string,
+// }
+//TODO finish this
+// export class ContainerTemplate implements DemoTemplate {
+// }
+//# sourceMappingURL=DemoTemplate.js.map
 
 /***/ }),
 
