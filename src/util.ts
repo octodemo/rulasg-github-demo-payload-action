@@ -11,7 +11,7 @@ export type Repository = {
 export function getOctokit(token?: string): Octokit {
   let octokitToken: string;
 
-  if (!token) {
+  if (!token || token.trim().length === 0) {
     octokitToken = getGitHubToken();
   } else {
     octokitToken = token;

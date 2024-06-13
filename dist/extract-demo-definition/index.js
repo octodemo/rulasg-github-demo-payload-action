@@ -528,7 +528,7 @@ const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 function getOctokit(token) {
     let octokitToken;
-    if (!token) {
+    if (!token || token.trim().length === 0) {
         octokitToken = getGitHubToken();
     }
     else {

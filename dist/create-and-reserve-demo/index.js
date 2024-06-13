@@ -439,7 +439,7 @@ async function exec() {
         core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
         demoConfig = undefined;
     }
-    const octokit = (0, util_2.getOctokit)();
+    const octokit = (0, util_2.getOctokit)(core.getInput('github_template_token'));
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     const templateValid = await inputs.template.isValid(octokit);
     if (!templateValid) {
@@ -747,7 +747,7 @@ const rest_1 = __nccwpck_require__(5375);
 const core = __importStar(__nccwpck_require__(2186));
 function getOctokit(token) {
     let octokitToken;
-    if (!token) {
+    if (!token || token.trim().length === 0) {
         octokitToken = getGitHubToken();
     }
     else {
