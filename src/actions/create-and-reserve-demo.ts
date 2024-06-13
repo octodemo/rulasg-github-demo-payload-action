@@ -53,8 +53,8 @@ async function exec() {
   const octokit = getOctokit();
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
-
-  if (await inputs.template.isValid(octokit)) {
+  const templateValid = await inputs.template.isValid(octokit);
+  if (!templateValid) {
     core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
     return
   }
