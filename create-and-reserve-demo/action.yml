@@ -109,4 +109,4 @@ outputs:
 
 runs:
   using: node20
-  main: './dist/create-demo-definition/index.js'
+  main: './dist/create-and-reserve-demo/index.js'
