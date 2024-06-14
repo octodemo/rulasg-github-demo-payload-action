@@ -63,14 +63,7 @@ export class RepositoryDemoTemplate implements DemoTemplate {
   private ref: string;
   private directoryPath: string;
 
-  constructor(payload: string) {
-    let data: RepositoryDemoTemplatePayload;
-    try {
-      data = JSON.parse(payload);
-    } catch (err: any) {
-      throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
-    }
-
+  constructor(data: RepositoryDemoTemplatePayload) {
     this.repo = {
       owner: data.owner,
       repo: data.repo,
@@ -123,14 +116,7 @@ export class ContainerDemoTemplate implements DemoTemplate {
   private version: string;
   private ghcr: string;
 
-  constructor(payload: string) {
-    let data: ContainerDemoTemplatePayload;
-    try {
-      data = JSON.parse(payload);
-    } catch (err: any) {
-      throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
-    }
-
+  constructor(data: ContainerDemoTemplatePayload) {
     this.owner = data.owner;
     this.containerName = data.name;
     this.version = data.version;
