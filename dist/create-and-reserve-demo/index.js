@@ -416,11 +416,16 @@ async function run() {
 }
 run();
 async function exec() {
+    let template;
+    try {
+        template = (0, DemoTemplate_1.getDemoTemplate)((0, util_2.getRequiredInput)('template_data'));
+    }
+    catch (err) {
+        core.setFailed(err);
+        return;
+    }
     const inputs = {
-        template: new DemoTemplate_1.RepositoryDemoTemplate({
-            owner: (0, util_2.getRequiredInput)('template_repository_owner'),
-            repo: (0, util_2.getRequiredInput)('template_repository_name'),
-        }, core.getInput('template_repository_ref'), core.getInput('template_repository_directory_path')),
+        template: template,
         target: {
             owner: (0, util_2.getRequiredInput)('repository_owner'),
         },
@@ -664,13 +669,46 @@ exports.DemoPayload = DemoPayload;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RepositoryDemoTemplate = void 0;
+exports.ContainerDemoTemplate = exports.RepositoryDemoTemplate = exports.getDemoTemplate = exports.PAYLOAD_TYPE_REPOSITORY = exports.PAYLOAD_TYPE_CONTAINER = void 0;
 const util_1 = __nccwpck_require__(4024);
+exports.PAYLOAD_TYPE_CONTAINER = 'container';
+exports.PAYLOAD_TYPE_REPOSITORY = 'repository';
+function getDemoTemplate(data) {
+    try {
+        const payload = JSON.parse(data);
+        const type = payload === null || payload === void 0 ? void 0 : payload.type.toLowerCase();
+        switch (type) {
+            case 'container': {
+                return new ContainerDemoTemplate(payload);
+            }
+            case 'repository': {
+                return new RepositoryDemoTemplate(payload);
+            }
+            default: {
+                throw new Error(`Invalid template type, '${type}', in provided template data, '${data}'.`);
+            }
+        }
+    }
+    catch (err) {
+        throw new Error(`The template data was not valid, ${err.toString()}`);
+    }
+}
+exports.getDemoTemplate = getDemoTemplate;
 class RepositoryDemoTemplate {
-    constructor(repo, ref = 'main', directoryPath = '') {
-        this.repo = repo;
-        this.ref = ref;
-        this.directoryPath = directoryPath;
+    constructor(payload) {
+        let data;
+        try {
+            data = JSON.parse(payload);
+        }
+        catch (err) {
+            throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
+        }
+        this.repo = {
+            owner: data.owner,
+            repo: data.repo,
+        };
+        this.ref = data.ref || 'main';
+        this.directoryPath = data.directory_path || '';
     }
     get name() {
         return `${this.repo.owner}/${this.repo.repo}:${this.ref}`;
@@ -703,14 +741,37 @@ class RepositoryDemoTemplate {
     }
 }
 exports.RepositoryDemoTemplate = RepositoryDemoTemplate;
-// export type ContainerTemplate = Template & {
-//   registry: string,
-//   name: string,
-//   version: string,
-// }
-//TODO finish this
-// export class ContainerTemplate implements DemoTemplate {
-// }
+class ContainerDemoTemplate {
+    constructor(payload) {
+        let data;
+        try {
+            data = JSON.parse(payload);
+        }
+        catch (err) {
+            throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
+        }
+        this.owner = data.owner;
+        this.containerName = data.name;
+        this.version = data.version;
+        this.ghcr = data.container_registry || `ghcr.io`;
+    }
+    getDirectoryPath() {
+        throw new Error('Method not implemented.');
+    }
+    getTerraformVariablesObject() {
+        throw new Error('Method not implemented.');
+    }
+    appendTemplateOutputValues(result) {
+        throw new Error('Method not implemented.');
+    }
+    get name() {
+        return `${this.ghcr}/${this.owner}/${this.containerName}:${this.version}`;
+    }
+    async isValid(octokit) {
+        return true;
+    }
+}
+exports.ContainerDemoTemplate = ContainerDemoTemplate;
 //# sourceMappingURL=DemoTemplate.js.map
 
 /***/ }),

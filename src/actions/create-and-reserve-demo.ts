@@ -5,7 +5,7 @@ import { DemoDeployment } from '../DemoDeployment';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { DEMO_STATES } from '../constants';
 import { getOctokit, getRequiredInput, getTags, repositoryExists } from '../util';
-import { RepositoryDemoTemplate } from '../demo-payload/DemoTemplate';
+import { DemoTemplate, getDemoTemplate } from '../demo-payload/DemoTemplate';
 import { DemoPayload } from '../demo-payload/DemoPayload';
 
 async function run() {
@@ -20,20 +20,19 @@ run();
 
 
 async function exec() {
-  const inputs = {
-    template: new RepositoryDemoTemplate(
-      {
-        owner: getRequiredInput('template_repository_owner'),
-        repo: getRequiredInput('template_repository_name'),
-      },
-      core.getInput('template_repository_ref'),
-      core.getInput('template_repository_directory_path')
-    ),
+  let template: DemoTemplate;
+  try {
+    template = getDemoTemplate(getRequiredInput('template_data'));
+  } catch (err: any) {
+    core.setFailed(err);
+    return;
+  }
 
+  const inputs = {
+    template: template,
     target: {
       owner: getRequiredInput('repository_owner'),
     },
-
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
     tags: getTags('tags'),

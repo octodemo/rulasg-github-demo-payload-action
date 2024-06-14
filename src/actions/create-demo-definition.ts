@@ -4,7 +4,7 @@ import { inspect } from 'util';
 import { DEMO_STATES } from '../constants';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
 import { getOctokit, getRequiredInput, getTags } from '../util';
-import { RepositoryDemoTemplate } from '../demo-payload/DemoTemplate';
+import { getDemoTemplate } from '../demo-payload/DemoTemplate';
 import { DemoPayload } from '../demo-payload/DemoPayload';
 
 async function run() {
@@ -19,15 +19,16 @@ run();
 
 
 async function exec() {
+  const template = getDemoTemplate(JSON.stringify({
+    type: 'repository',
+    owner: getRequiredInput('template_repository_owner'),
+    repo: getRequiredInput('template_repository_name'),
+    ref: core.getInput('template_repository_ref'),
+    directory_path: core.getInput('template_repository_directory_path')
+  }));
+
   const inputs = {
-    template: new RepositoryDemoTemplate(
-      {
-        owner: getRequiredInput('template_repository_owner'),
-        repo: getRequiredInput('template_repository_name'),
-      },
-      core.getInput('template_repository_ref'),
-      core.getInput('template_repository_directory_path')
-    ),
+    template: template,
     target: {
       owner: getRequiredInput('repository_owner'),
       repo: getRequiredInput('repository_name'),

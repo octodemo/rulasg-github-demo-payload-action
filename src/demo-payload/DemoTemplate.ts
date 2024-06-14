@@ -2,6 +2,47 @@ import { Octokit } from '@octokit/rest';
 import { Repository } from '../types';
 import { repositoryBranchExists, repositoryExists } from '../util';
 
+export const PAYLOAD_TYPE_CONTAINER = 'container';
+export const PAYLOAD_TYPE_REPOSITORY = 'repository';
+
+export type RepositoryDemoTemplatePayload = {
+  type: 'repository',
+  owner: string
+  repo: string,
+  ref?: string,
+  directory_path?: string,
+}
+
+export type ContainerDemoTemplatePayload = {
+  type: 'container',
+  owner: string
+  name: string,
+  version: string
+  container_registry?: string
+}
+
+export function getDemoTemplate(data: string): DemoTemplate {
+  try {
+    const payload = JSON.parse(data);
+    const type = payload?.type.toLowerCase();
+
+    switch(type) {
+      case 'container': {
+        return new ContainerDemoTemplate(payload);
+      }
+      case 'repository': {
+        return new RepositoryDemoTemplate(payload);
+      }
+      default: {
+        throw new Error(`Invalid template type, '${type}', in provided template data, '${data}'.`);
+      }
+    }
+
+  } catch (err: any) {
+    throw new Error(`The template data was not valid, ${err.toString()}`);
+  }
+}
+
 
 export interface DemoTemplate {
 
@@ -16,17 +57,26 @@ export interface DemoTemplate {
   get name(): string
 }
 
-
 export class RepositoryDemoTemplate implements DemoTemplate {
 
   private repo: Repository;
   private ref: string;
   private directoryPath: string;
 
-  constructor(repo: Repository, ref: string = 'main', directoryPath: string = '') {
-    this.repo = repo;
-    this.ref = ref;
-    this.directoryPath = directoryPath;
+  constructor(payload: string) {
+    let data: RepositoryDemoTemplatePayload;
+    try {
+      data = JSON.parse(payload);
+    } catch (err: any) {
+      throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
+    }
+
+    this.repo = {
+      owner: data.owner,
+      repo: data.repo,
+    };
+    this.ref = data.ref || 'main';
+    this.directoryPath = data.directory_path || '';
   }
 
   get name(): string {
@@ -66,13 +116,44 @@ export class RepositoryDemoTemplate implements DemoTemplate {
   }
 }
 
-// export type ContainerTemplate = Template & {
-//   registry: string,
-//   name: string,
-//   version: string,
-// }
+export class ContainerDemoTemplate implements DemoTemplate {
 
-//TODO finish this
-// export class ContainerTemplate implements DemoTemplate {
+  private owner: string;
+  private containerName: string;
+  private version: string;
+  private ghcr: string;
 
-// }
+  constructor(payload: string) {
+    let data: ContainerDemoTemplatePayload;
+    try {
+      data = JSON.parse(payload);
+    } catch (err: any) {
+      throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
+    }
+
+    this.owner = data.owner;
+    this.containerName = data.name;
+    this.version = data.version;
+    this.ghcr = data.container_registry || `ghcr.io`;
+  }
+
+  getDirectoryPath(): string {
+    throw new Error('Method not implemented.');
+  }
+
+  getTerraformVariablesObject(): object {
+    throw new Error('Method not implemented.');
+  }
+
+  appendTemplateOutputValues(result: object) {
+    throw new Error('Method not implemented.');
+  }
+
+  get name() {
+    return `${this.ghcr}/${this.owner}/${this.containerName}:${this.version}`;
+  }
+
+  async isValid(octokit?: Octokit) {
+    return true;
+  }
+}
