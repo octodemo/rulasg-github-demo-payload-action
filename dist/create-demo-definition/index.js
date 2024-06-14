@@ -680,14 +680,7 @@ function getDemoTemplate(data) {
 }
 exports.getDemoTemplate = getDemoTemplate;
 class RepositoryDemoTemplate {
-    constructor(payload) {
-        let data;
-        try {
-            data = JSON.parse(payload);
-        }
-        catch (err) {
-            throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
-        }
+    constructor(data) {
         this.repo = {
             owner: data.owner,
             repo: data.repo,
@@ -727,14 +720,7 @@ class RepositoryDemoTemplate {
 }
 exports.RepositoryDemoTemplate = RepositoryDemoTemplate;
 class ContainerDemoTemplate {
-    constructor(payload) {
-        let data;
-        try {
-            data = JSON.parse(payload);
-        }
-        catch (err) {
-            throw new Error(`Failed to parse the payload data for the template '${payload}': ${err.message}`);
-        }
+    constructor(data) {
         this.owner = data.owner;
         this.containerName = data.name;
         this.version = data.version;
