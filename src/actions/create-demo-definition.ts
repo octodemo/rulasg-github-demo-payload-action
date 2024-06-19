@@ -99,6 +99,7 @@ async function exec() {
   // Create the demo deployment on the repository for the provisioning
   const demoDeployment = await deploymentManager.createDemoDeployment(
     `${inputs.target.owner}/${inputs.target.repo}`,
+    'placeholder',
     payload.getTerraformVariables()
   );
   core.setOutput('demo_deployment_id', demoDeployment.id);

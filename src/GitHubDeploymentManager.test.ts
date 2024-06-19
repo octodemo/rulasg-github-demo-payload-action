@@ -145,10 +145,12 @@ describe('DeploymentManager', function () {
 
     const DEPLOYMENT_NAME = 'test-demo-deployment'
 
+    const UUID = '4129d60f-db50-4227-a404-c2f4416623cd';
+
     let deployment;
 
     before('initialize test deployment', async () => {
-      deployment = await deploymentManager.createDemoDeployment(DEPLOYMENT_NAME, { name: 'value' });
+      deployment = await deploymentManager.createDemoDeployment(DEPLOYMENT_NAME, UUID, { name: 'value' });
     });
 
     after('remove test deployemnt', async () => {
@@ -170,6 +172,14 @@ describe('DeploymentManager', function () {
     function getDeploymentName(): string {
       return deployment.environment;
     }
+
+    describe('#getDemoDeploymentForUUID()', () => {
+
+      it('should fetch and existing UUID', async () => {
+        const deployment = await deploymentManager.getDemoDeploymentForUUID(UUID);
+        expect(deployment?.uuid).to.equal(UUID);
+      });
+    });
 
     describe('#updateDeploymentStatus()', () => {
       it('should update the status', async () => {
@@ -206,6 +216,7 @@ describe('DeploymentManager', function () {
         const result = await deploymentManager.getDemoDeployment(name);
         expect(result).to.have.property('id').to.equal(deployment.id);
         expect(result).to.have.property('environment').to.equal(getDeploymentName());
+        expect(result?.uuid).to.equal(UUID);
       });
 
       // it('should get an existing demo deployment', async () => {

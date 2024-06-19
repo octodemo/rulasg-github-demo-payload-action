@@ -39,7 +39,7 @@ export type GitHubDeployment = {
   payload?: DemoPayloadContext,
 }
 
-
+//TODO this is no longer valid representation as we move to JSON encoding of the templates
 export type DemoPayloadContext = {
   github_context: {
     actor: string,

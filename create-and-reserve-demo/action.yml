@@ -13,6 +13,10 @@ inputs:
     default: ${{ github.token }}
     required: true
 
+  uuid:
+    description: A UUID for the demo request, this is the unique identifier for the demo
+    required: true
+
   template_data:
     description: The JSON encoded data for the template reference, supports container and repository references
     required: true

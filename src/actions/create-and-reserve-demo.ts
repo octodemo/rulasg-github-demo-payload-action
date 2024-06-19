@@ -35,6 +35,7 @@ async function exec() {
     },
     user: core.getInput('user'),
     issue: core.getInput('issue_id'),
+    uuid: core.getInput('uuid'),
     tags: getTags('tags'),
     github_template_token: core.getInput('github_template_token'),
   };
@@ -53,6 +54,16 @@ async function exec() {
   const octokit = getOctokit();
   const templateOctokit = getOctokit(inputs.github_template_token);
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
+
+  // Before we do anything check to see if the UUID of the deployment already exists and if so fail
+  // we expect that deployments will nto be recycled instead spending a time going through the lifecycle
+  // before ultimately being deleted once the lifecycle has completed.
+  const existing = await deploymentManager.getDemoDeploymentForUUID(inputs.uuid);
+  if (existing) {
+    core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
+    //TODO might need to provide addition error details on the existing deployment
+    return;
+  }
 
   const templateValid = await inputs.template.isValid(templateOctokit);
   if (!templateValid) {
@@ -102,6 +113,7 @@ async function exec() {
 
           demoDeployment = await deploymentManager.createDemoDeployment(
             `${payload.target.owner}/${payload.target.repo}`,
+            inputs.uuid,
             payload.getTerraformVariables()
           );
           core.info(`  reserved repository`);

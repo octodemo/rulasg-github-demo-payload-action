@@ -28,6 +28,21 @@ export class DemoDeployment {
     return this.data.environment;
   }
 
+  get description() {
+    return this.data.description;
+  }
+
+  get uuid() {
+    const description = this.description;
+    if (description) {
+      const matched = /uuid\:(.*)/.exec(description);
+      if (matched) {
+        return matched[1];
+      }
+    }
+    return undefined;
+  }
+
   get environment() {
     if (this.data.environment.indexOf(ENVIRONMENT_NAME_PREFIX) === 0) {
       return this.data.environment.substring(ENVIRONMENT_NAME_PREFIX.length);
