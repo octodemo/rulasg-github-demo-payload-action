@@ -114,14 +114,38 @@ exports.DemoDeployment = DemoDeployment;
 /***/ }),
 
 /***/ 3541:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubDeploymentManager = void 0;
 const DemoDeployment_1 = __nccwpck_require__(2528);
 const constants_1 = __nccwpck_require__(5105);
+const core = __importStar(__nccwpck_require__(2186));
 class GitHubDeploymentManager {
     constructor(repo, github, ref) {
         this.repo = repo;
@@ -247,6 +271,10 @@ class GitHubDeploymentManager {
         });
     }
     createDemoDeployment(name, uuid, payload) {
+        core.info(`creating deployment: ${name}`);
+        core.info(`  github object: ${this.github}`);
+        core.info(`  github repos object: ${this.github.repos}`);
+        core.info(`  github repos createDeployment object: ${this.github.repos.createDeployment}`);
         return this.github.repos.createDeployment({
             ...this.repo,
             ref: this.ref,
@@ -536,7 +564,7 @@ async function exec() {
         }
         else {
             // Now check and verify if there is an existing deployment object sitting in place for this repoisitory, as we might have another process running in parallel creating one
-            // or another process deleting one, but the deployment is not gone yet.
+            // or another process deleting one, but the deployment is not done yet.
             // There could be a secondary workflow executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
             const existingDeployment = await deploymentManager.getDemoDeployment(`${inputs.target.owner}/${potentialRepositoryName}`);
             if (existingDeployment) {
@@ -548,6 +576,7 @@ async function exec() {
                     repo: potentialRepositoryName,
                 };
                 payload = new DemoPayload_1.DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
+                core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
                 const validation = await payload.validate(octokit, templateOctokit);
                 if (validation.templateExists && !validation.targetRepositoryExists) {
                     // Provide the outputs to the workflow

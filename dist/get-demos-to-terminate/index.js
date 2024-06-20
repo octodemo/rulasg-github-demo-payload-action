@@ -220,14 +220,38 @@ exports.DemoDeploymentReview = DemoDeploymentReview;
 /***/ }),
 
 /***/ 3541:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubDeploymentManager = void 0;
 const DemoDeployment_1 = __nccwpck_require__(2528);
 const constants_1 = __nccwpck_require__(5105);
+const core = __importStar(__nccwpck_require__(2186));
 class GitHubDeploymentManager {
     constructor(repo, github, ref) {
         this.repo = repo;
@@ -353,6 +377,10 @@ class GitHubDeploymentManager {
         });
     }
     createDemoDeployment(name, uuid, payload) {
+        core.info(`creating deployment: ${name}`);
+        core.info(`  github object: ${this.github}`);
+        core.info(`  github repos object: ${this.github.repos}`);
+        core.info(`  github repos createDeployment object: ${this.github.repos.createDeployment}`);
         return this.github.repos.createDeployment({
             ...this.repo,
             ref: this.ref,

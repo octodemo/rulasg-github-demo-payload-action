@@ -3,6 +3,8 @@ import { DemoDeployment } from './DemoDeployment';
 import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
 import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types';
 
+import * as core from '@actions/core';
+
 export class GitHubDeploymentManager {
 
   private readonly github: Octokit;
@@ -147,6 +149,11 @@ export class GitHubDeploymentManager {
   }
 
   createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
+    core.info(`creating deployment: ${name}`);
+    core.info(`  github object: ${this.github}`)
+    core.info(`  github repos object: ${this.github.repos}`)
+    core.info(`  github repos createDeployment object: ${this.github.repos.createDeployment}`)
+
     return this.github.repos.createDeployment({
       ...this.repo,
       ref: this.ref,

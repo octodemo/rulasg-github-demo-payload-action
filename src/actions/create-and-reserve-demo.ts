@@ -101,7 +101,7 @@ async function exec() {
     }
     else {
       // Now check and verify if there is an existing deployment object sitting in place for this repoisitory, as we might have another process running in parallel creating one
-      // or another process deleting one, but the deployment is not gone yet.
+      // or another process deleting one, but the deployment is not done yet.
       // There could be a secondary workflow executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
       const existingDeployment = await deploymentManager.getDemoDeployment(`${inputs.target.owner}/${potentialRepositoryName}`);
 
@@ -113,6 +113,8 @@ async function exec() {
           repo: potentialRepositoryName,
         };
         payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
+
+        core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
 
         const validation = await payload.validate(octokit, templateOctokit);
         if (validation.templateExists && !validation.targetRepositoryExists) {
