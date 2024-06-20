@@ -142,6 +142,7 @@ async function exec() {
     core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
   } else {
     core.setOutput('demo_deployment_id', demoDeployment.id);
+    core.setOutput('demo_deployment_name', demoDeployment.name);
     core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
 
     // Show the demo deployment in progress
