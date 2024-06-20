@@ -21,25 +21,6 @@ inputs:
     description: The JSON encoded data for the template reference, supports container and repository references
     required: true
 
-  # template_repository_owner:
-  #   description: The demo template repository owner
-  #   default: octodemo
-  #   required: true
-
-  # template_repository_name:
-  #   description: The demo template repository name
-  #   required: true
-
-  # template_repository_ref:
-  #   description: The demo template repository branch ref for the automation files and definitions
-  #   default: main
-  #   required: true
-
-  # template_directory_path:
-  #   description: The path to the template repository files on the runner
-  #   default: ${{ github.workspace }}/template
-  #   required: true
-
   repository_owner:
     description: The owner (organization) for the demo repository to be created under
     default: octodemo
@@ -59,11 +40,6 @@ inputs:
 
   demo_config:
     description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
-    required: false
-
-  prevent_duplicates:
-    description: Prevent duplicate demo instances from being created, i.e. fail early
-    default: true
     required: false
 
   tags:

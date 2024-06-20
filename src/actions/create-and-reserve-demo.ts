@@ -38,6 +38,7 @@ async function exec() {
     uuid: core.getInput('uuid'),
     tags: getTags('tags'),
     github_template_token: core.getInput('github_template_token'),
+    github_token: getRequiredInput('github_token'),
   };
 
   let demoConfig = undefined;
@@ -51,7 +52,7 @@ async function exec() {
     demoConfig = undefined;
   }
 
-  const octokit = getOctokit();
+  const octokit = getOctokit(inputs.github_token);
   const templateOctokit = getOctokit(inputs.github_template_token);
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
@@ -65,11 +66,17 @@ async function exec() {
     return;
   }
 
-  const templateValid = await inputs.template.isValid(templateOctokit);
-  if (!templateValid) {
-    core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+  try {
+    const templateValid = await inputs.template.isValid(templateOctokit);
+    if (!templateValid) {
+      core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+      return;
+    }
+  } catch (err: any) {
+    core.setFailed(`Failure validating template: ${err.message}`);
     return;
   }
+
 
   const potentialNames = loadNames(getRequiredInput('potential_repository_names'));
   const potentialNamesCount = potentialNames.length;
@@ -132,6 +139,7 @@ async function exec() {
     core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
   } else {
     core.setOutput('demo_deployment_id', demoDeployment.id);
+    core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
 
     // Show the demo deployment in progress
     await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', DEMO_STATES.provisioning);
