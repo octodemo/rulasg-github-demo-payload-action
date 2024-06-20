@@ -3,8 +3,6 @@ import { DemoDeployment } from './DemoDeployment';
 import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
 import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types';
 
-import * as core from '@actions/core';
-
 export class GitHubDeploymentManager {
 
   private readonly github: Octokit;
@@ -44,7 +42,7 @@ export class GitHubDeploymentManager {
   }
 
   deactivateDeployment(id: number): Promise<boolean> {
-    return this.github.repos.createDeploymentStatus({
+    return this.github.rest.repos.createDeploymentStatus({
       ...this.repo,
       deployment_id: id,
       state: 'inactive',
@@ -57,7 +55,7 @@ export class GitHubDeploymentManager {
   }
 
   deleteDeployment(id: number): Promise<boolean> {
-    return this.github.repos.deleteDeployment({
+    return this.github.rest.repos.deleteDeployment({
       ...this.repo,
       deployment_id: id,
       headers: {
@@ -77,7 +75,7 @@ export class GitHubDeploymentManager {
   }
 
   getEnvironmentDeployments(name: string): Promise<GitHubDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
+    return this.github.rest.repos.listDeployments({
       ...this.repo,
       environment: name,
       task: 'deploy',
@@ -134,7 +132,7 @@ export class GitHubDeploymentManager {
   }
 
   getDemoDeploymentById(id: number): Promise<DemoDeployment> {
-    return this.github.repos.getDeployment({
+    return this.github.rest.repos.getDeployment({
       ...this.repo,
       deployment_id: id,
       headers: {
@@ -149,12 +147,7 @@ export class GitHubDeploymentManager {
   }
 
   createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
-    core.info(`creating deployment: ${name}`);
-    core.info(`  github object: ${this.github}`)
-    core.info(`  github repos object: ${this.github.repos}`)
-    core.info(`  github repos createDeployment object: ${this.github.repos.createDeployment}`)
-
-    return this.github.repos.createDeployment({
+    return this.github.rest.repos.createDeployment({
       ...this.repo,
       ref: this.ref,
       task: DEMO_DEPLOYMENT_TASK,
@@ -200,7 +193,7 @@ export class GitHubDeploymentManager {
       payload['log_url'] = logUrl;
     }
 
-    return this.github.repos.createDeploymentStatus(payload)
+    return this.github.rest.repos.createDeploymentStatus(payload)
       .then(resp => {
         if (resp.status !== 201) {
           throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
@@ -210,7 +203,7 @@ export class GitHubDeploymentManager {
   }
 
   getIssueLabels(issueId: number): Promise<string[]> {
-    return this.github.issues.listLabelsOnIssue({
+    return this.github.rest.issues.listLabelsOnIssue({
       ...this.repo,
       issue_number: issueId,
       per_page: 100,
@@ -225,7 +218,7 @@ export class GitHubDeploymentManager {
   }
 
   addIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
-    return this.github.issues.addLabels({
+    return this.github.rest.issues.addLabels({
       ...this.repo,
       issue_number: issueId,
       labels: label,
@@ -247,7 +240,7 @@ export class GitHubDeploymentManager {
     const promises: Promise<boolean>[] = [];
 
     label.forEach(label => {
-      const promise = this.github.issues.removeLabel({
+      const promise = this.github.rest.issues.removeLabel({
         ...this.repo,
         issue_number: issueId,
         name: label,
@@ -273,7 +266,7 @@ export class GitHubDeploymentManager {
   }
 
   addIssueComment(id: number, comment: string): Promise<boolean> {
-    return this.github.issues.createComment({
+    return this.github.rest.issues.createComment({
       ...this.repo,
       issue_number: id,
       body: comment,

@@ -114,38 +114,14 @@ exports.DemoDeployment = DemoDeployment;
 /***/ }),
 
 /***/ 3541:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubDeploymentManager = void 0;
 const DemoDeployment_1 = __nccwpck_require__(2528);
 const constants_1 = __nccwpck_require__(5105);
-const core = __importStar(__nccwpck_require__(2186));
 class GitHubDeploymentManager {
     constructor(repo, github, ref) {
         this.repo = repo;
@@ -175,7 +151,7 @@ class GitHubDeploymentManager {
         });
     }
     deactivateDeployment(id) {
-        return this.github.repos.createDeploymentStatus({
+        return this.github.rest.repos.createDeploymentStatus({
             ...this.repo,
             deployment_id: id,
             state: 'inactive',
@@ -187,7 +163,7 @@ class GitHubDeploymentManager {
         });
     }
     deleteDeployment(id) {
-        return this.github.repos.deleteDeployment({
+        return this.github.rest.repos.deleteDeployment({
             ...this.repo,
             deployment_id: id,
             headers: {
@@ -205,7 +181,7 @@ class GitHubDeploymentManager {
         });
     }
     getEnvironmentDeployments(name) {
-        return this.github.repos.listDeployments({
+        return this.github.rest.repos.listDeployments({
             ...this.repo,
             environment: name,
             task: 'deploy',
@@ -257,7 +233,7 @@ class GitHubDeploymentManager {
         });
     }
     getDemoDeploymentById(id) {
-        return this.github.repos.getDeployment({
+        return this.github.rest.repos.getDeployment({
             ...this.repo,
             deployment_id: id,
             headers: {
@@ -271,11 +247,7 @@ class GitHubDeploymentManager {
         });
     }
     createDemoDeployment(name, uuid, payload) {
-        core.info(`creating deployment: ${name}`);
-        core.info(`  github object: ${this.github}`);
-        core.info(`  github repos object: ${this.github.repos}`);
-        core.info(`  github repos createDeployment object: ${this.github.repos.createDeployment}`);
-        return this.github.repos.createDeployment({
+        return this.github.rest.repos.createDeployment({
             ...this.repo,
             ref: this.ref,
             task: constants_1.DEMO_DEPLOYMENT_TASK,
@@ -315,7 +287,7 @@ class GitHubDeploymentManager {
         if (logUrl) {
             payload['log_url'] = logUrl;
         }
-        return this.github.repos.createDeploymentStatus(payload)
+        return this.github.rest.repos.createDeploymentStatus(payload)
             .then(resp => {
             if (resp.status !== 201) {
                 throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
@@ -324,7 +296,7 @@ class GitHubDeploymentManager {
         });
     }
     getIssueLabels(issueId) {
-        return this.github.issues.listLabelsOnIssue({
+        return this.github.rest.issues.listLabelsOnIssue({
             ...this.repo,
             issue_number: issueId,
             per_page: 100,
@@ -338,7 +310,7 @@ class GitHubDeploymentManager {
         });
     }
     addIssueLabels(issueId, ...label) {
-        return this.github.issues.addLabels({
+        return this.github.rest.issues.addLabels({
             ...this.repo,
             issue_number: issueId,
             labels: label,
@@ -360,7 +332,7 @@ class GitHubDeploymentManager {
     removeIssueLabels(issueId, ...label) {
         const promises = [];
         label.forEach(label => {
-            const promise = this.github.issues.removeLabel({
+            const promise = this.github.rest.issues.removeLabel({
                 ...this.repo,
                 issue_number: issueId,
                 name: label,
@@ -383,7 +355,7 @@ class GitHubDeploymentManager {
         });
     }
     addIssueComment(id, comment) {
-        return this.github.issues.createComment({
+        return this.github.rest.issues.createComment({
             ...this.repo,
             issue_number: id,
             body: comment,
