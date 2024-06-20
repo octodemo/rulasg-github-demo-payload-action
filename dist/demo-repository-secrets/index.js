@@ -156,6 +156,10 @@ function getOctokit(token) {
 }
 exports.getOctokit = getOctokit;
 function getGitHubToken() {
+    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
+    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
+    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
+    // fallback option
     let token = process.env['GITHUB_TOKEN'];
     if (!token) {
         token = core.getInput('github_token');

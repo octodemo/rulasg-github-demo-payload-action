@@ -120,8 +120,8 @@ exports.DemoDeployment = DemoDeployment;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubDeploymentManager = void 0;
-const constants_1 = __nccwpck_require__(5105);
 const DemoDeployment_1 = __nccwpck_require__(2528);
+const constants_1 = __nccwpck_require__(5105);
 class GitHubDeploymentManager {
     constructor(repo, github, ref) {
         this.repo = repo;
@@ -208,7 +208,7 @@ class GitHubDeploymentManager {
         return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
             task: constants_1.DEMO_DEPLOYMENT_TASK,
-            per_page: 100,
+            per_page: 100
         }).then(deployments => {
             return this.extractDemoDeploymentsFromResponse(deployments);
         });
@@ -255,7 +255,7 @@ class GitHubDeploymentManager {
             required_contexts: [],
             environment: `demo/${name}`,
             payload: payload,
-            description: uuid,
+            description: `uuid:${uuid}`,
             transient_environment: true,
             headers: {
                 'X-GitHub-Api-Version': '2022-11-28'
@@ -479,6 +479,7 @@ async function exec() {
         uuid: core.getInput('uuid'),
         tags: (0, util_2.getTags)('tags'),
         github_template_token: core.getInput('github_template_token'),
+        github_token: (0, util_2.getRequiredInput)('github_token'),
     };
     let demoConfig = undefined;
     try {
@@ -491,21 +492,29 @@ async function exec() {
         core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
         demoConfig = undefined;
     }
-    const octokit = (0, util_2.getOctokit)();
+    const octokit = (0, util_2.getOctokit)(inputs.github_token);
     const templateOctokit = (0, util_2.getOctokit)(inputs.github_template_token);
     const deploymentManager = new GitHubDeploymentManager_1.GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     // Before we do anything check to see if the UUID of the deployment already exists and if so fail
     // we expect that deployments will nto be recycled instead spending a time going through the lifecycle
     // before ultimately being deleted once the lifecycle has completed.
+    core.info(`Checking for existing demo deployment for UUID: ${inputs.uuid}...`);
     const existing = await deploymentManager.getDemoDeploymentForUUID(inputs.uuid);
     if (existing) {
         core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
         //TODO might need to provide addition error details on the existing deployment
         return;
     }
-    const templateValid = await inputs.template.isValid(templateOctokit);
-    if (!templateValid) {
-        core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+    try {
+        core.info(`Validating template reference...`);
+        const templateValid = await inputs.template.isValid(templateOctokit);
+        if (!templateValid) {
+            core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+            return;
+        }
+    }
+    catch (err) {
+        core.setFailed(`Failure validating template: ${err.message}`);
         return;
     }
     const potentialNames = loadNames((0, util_2.getRequiredInput)('potential_repository_names'));
@@ -560,6 +569,7 @@ async function exec() {
     }
     else {
         core.setOutput('demo_deployment_id', demoDeployment.id);
+        core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
         // Show the demo deployment in progress
         await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', constants_1.DEMO_STATES.provisioning);
         core.startGroup('Demo Deployment');
@@ -861,6 +871,10 @@ function getOctokit(token) {
 }
 exports.getOctokit = getOctokit;
 function getGitHubToken() {
+    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
+    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
+    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
+    // fallback option
     let token = process.env['GITHUB_TOKEN'];
     if (!token) {
         token = core.getInput('github_token');

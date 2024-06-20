@@ -59,6 +59,7 @@ async function exec() {
   // Before we do anything check to see if the UUID of the deployment already exists and if so fail
   // we expect that deployments will nto be recycled instead spending a time going through the lifecycle
   // before ultimately being deleted once the lifecycle has completed.
+  core.info(`Checking for existing demo deployment for UUID: ${inputs.uuid}...`);
   const existing = await deploymentManager.getDemoDeploymentForUUID(inputs.uuid);
   if (existing) {
     core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
@@ -67,6 +68,7 @@ async function exec() {
   }
 
   try {
+    core.info(`Validating template reference...`);
     const templateValid = await inputs.template.isValid(templateOctokit);
     if (!templateValid) {
       core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
@@ -76,7 +78,6 @@ async function exec() {
     core.setFailed(`Failure validating template: ${err.message}`);
     return;
   }
-
 
   const potentialNames = loadNames(getRequiredInput('potential_repository_names'));
   const potentialNamesCount = potentialNames.length;
