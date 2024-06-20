@@ -63,7 +63,7 @@ async function exec() {
   const existing = await deploymentManager.getDemoDeploymentForUUID(inputs.uuid);
   if (existing) {
     core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
-    //TODO might need to provide addition error details on the existing deployment
+    //TODO might need to provide additional error details on the existing deployment
     return;
   }
 

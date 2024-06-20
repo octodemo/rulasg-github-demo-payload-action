@@ -1,4 +1,5 @@
-import { Octokit } from '@octokit/rest';
+import {Octokit} from '@octokit/rest'
+import * as github from '@actions/github';
 import * as core from '@actions/core';
 
 export type Tags = {[key: string]: string};
@@ -17,7 +18,8 @@ export function getOctokit(token?: string): Octokit {
     octokitToken = token;
   }
 
-  return new Octokit({ auth: octokitToken });
+  //@ts-ignore
+  return github.getOctokit(octokitToken);
 }
 
 export function getGitHubToken(): string {
