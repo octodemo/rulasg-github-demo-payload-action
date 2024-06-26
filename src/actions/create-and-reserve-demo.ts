@@ -34,7 +34,7 @@ async function exec() {
       owner: getRequiredInput('repository_owner'),
     },
     user: core.getInput('user'),
-    issue: core.getInput('issue_id'),
+    issue: core.getInput('issue_number'),
     uuid: core.getInput('uuid'),
     tags: getTags('tags'),
     github_template_token: core.getInput('github_template_token'),
