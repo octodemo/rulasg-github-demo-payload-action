@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
-import { expect } from 'chai';
+import { describe, it, expect, beforeAll } from 'vitest';
+// import { expect } from 'chai';
 import { AnalysisResults, DemoDeploymentReview } from './DemoDeploymentReview';
 import { Repository } from './types';
 import { getOctokit, getRepository } from './util';
@@ -12,7 +13,7 @@ describe('DeploymentManager', () => {
 
   let repo: Repository;
 
-  before(async () => {
+  beforeAll(async () => {
     octokit = getOctokit();
     repo = getRepository();
 

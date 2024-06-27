@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DEMO_STATES } from '../constants';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput, getTags } from '../util';
-import { getDemoTemplate } from '../demo-payload/DemoTemplate';
+import { DEMO_STATES } from '../constants';
 import { DemoPayload } from '../demo-payload/DemoPayload';
+import { getDemoTemplate } from '../demo-payload/DemoTemplate';
+import { getOctokit, getRequiredInput, getTags } from '../util';
 
 async function run() {
   try {
@@ -65,8 +65,8 @@ async function exec() {
 
       const existingDeployment = await deploymentManager.getDemoDeployment(`${payload.target.owner}/${payload.target.repo}`);
       if (existingDeployment) {
-        if (existingDeployment.getTrackingIssue() === payload.linkedIssueId) {
-          core.warning(`Existing deployment for demo environment found and matched to the same tracking issue: ${payload.linkedIssueId}.\nThis typcially means that it was not torn down cleanly from a previous lifecycle.`);
+        if (existingDeployment.getTrackingIssue() === payload.linkedIssueNumber) {
+          core.warning(`Existing deployment for demo environment found and matched to the same tracking issue: ${payload.linkedIssueNumber}.\nThis typcially means that it was not torn down cleanly from a previous lifecycle.`);
         } else {
           core.error(`There is an existing deployment present: ${existingDeployment.id}:${existingDeployment.name} it is not allowed to have duplicate demo environments.`);
           try {

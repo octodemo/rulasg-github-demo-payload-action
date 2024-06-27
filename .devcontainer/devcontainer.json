@@ -3,14 +3,19 @@
     "docker-compose.yml"
   ],
   "service": "dev",
-  "extensions": [
-    "ms-azuretools.vscode-docker",
-    "christian-kohler.npm-intellisense",
-    "github.github-vscode-theme",
-  ],
-  "postAttachCommand": "npm install",
-  "settings": {
-    "telemetry.enableTelemetry": false,
-    "extensions.ignoreRecommendations": true
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "christian-kohler.npm-intellisense",
+        "github.github-vscode-theme",
+        "vitest.explorer"
+      ],
+      "settings": {
+        "telemetry.enableTelemetry": false,
+        "extensions.ignoreRecommendations": true
+      }
+    }
   },
+  "postAttachCommand": "npm install",
 }

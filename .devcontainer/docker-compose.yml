@@ -4,7 +4,7 @@ version: '3.8'
 
 services:
   dev:
-    image: ghcr.io/octodemo/container-nodejs-development:base-latest
+    image: ghcr.io/octodemo/development-containers/javascript-nodejs-20:azure-202405-r3
     command: sleep infinity
     network_mode: host
 

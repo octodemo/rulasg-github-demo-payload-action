@@ -5,6 +5,43 @@ import { Repository, repositoryExists, Tags } from '../util';
 import { DemoTemplate } from './DemoTemplate';
 
 
+import vine from '@vinejs/vine';
+
+// const demoSchema = vine.object({
+//   version: vine.number().required(),
+
+// });
+
+
+export type Demo = {
+  version: number,
+  demo_definition: DemoVersionOne | DemoVersionTwo
+}
+
+export type DemoVersionOne = {
+  demo_template: DemoTemplate,
+
+  communication_issue_number: number,
+
+  requestor_handle: string,
+
+  resources: {
+    github: {
+      target_repository: Repository
+    },
+    azure?: {},
+    aws?: {},
+    gcp?: {},
+    azure_devops?: {},
+  }
+}
+
+// TODO remove, just here for testing
+export type DemoVersionTwo = {
+
+}
+
+
 export type Validation = {
   targetRepositoryExists: boolean,
   templateExists: boolean
@@ -18,7 +55,7 @@ export class DemoPayload {
 
   readonly user: string;
 
-  readonly linkedIssueId?: number;
+  readonly linkedIssueNumber?: number;
 
   private demoConfig?: { [key: string]: any };
 
@@ -32,7 +69,7 @@ export class DemoPayload {
     this.user = user || github.context.actor;
 
     if (issue) {
-      this.linkedIssueId = parseInt(issue);
+      this.linkedIssueNumber = parseInt(issue);
     }
 
     this.demoConfig = demoConfig || undefined;
@@ -51,15 +88,35 @@ export class DemoPayload {
   }
 
   getTerraformVariables(): { [key: string]: any } {
-    const result = {
-      github_context: {
-        actor: this.user,
-        template_repository: this.template.getTerraformVariablesObject(),
-        template_repository_directory_path: this.template.getDirectoryPath(),
+    // const result = {
+    //   github_context: {
+    //     actor: this.user,
+    //     template_repository: this.template.getTerraformVariablesObject(),
+    //     template_repository_directory_path: this.template.getDirectoryPath(),
 
+    //     target_repository: {
+    //       ...this.target
+    //     },
+    //   },
+
+    //   azure_context: {},
+    //   gcp_context: {},
+    //   aws_context: {},
+
+    //   cloud_context: {
+    //     tags: {}
+    //   }
+    // };
+    const result = {
+      github: {
+        actor: this.user,
         target_repository: {
           ...this.target
         },
+      },
+
+      template: {
+        data: this.template.getJsonPayload()
       },
 
       azure_context: {},
@@ -71,8 +128,8 @@ export class DemoPayload {
       }
     };
 
-    if (this.linkedIssueId) {
-      result.github_context['tracking_issue'] = { id: this.linkedIssueId };
+    if (this.linkedIssueNumber) {
+      result.github_context['communication_issue_number'] = { id: this.linkedIssueNumber };
     }
 
     if (this.demoConfig) {
@@ -94,8 +151,8 @@ export class DemoPayload {
     result['repository_owner'] = this.target.owner;
     result['repository_name'] = this.target.repo;
 
-    if (this.linkedIssueId) {
-      result['tracking_issue'] = this.linkedIssueId;
+    if (this.linkedIssueNumber) {
+      result['tracking_issue'] = this.linkedIssueNumber;
     }
 
     if (this.validation) {

@@ -27,10 +27,10 @@ export function getDemoTemplate(data: string): DemoTemplate {
     const type = payload?.type.toLowerCase();
 
     switch(type) {
-      case 'container': {
+      case PAYLOAD_TYPE_CONTAINER: {
         return new ContainerDemoTemplate(payload);
       }
-      case 'repository': {
+      case PAYLOAD_TYPE_REPOSITORY: {
         return new RepositoryDemoTemplate(payload);
       }
       default: {
@@ -48,11 +48,14 @@ export interface DemoTemplate {
 
   isValid(octokit?: Octokit): Promise<boolean>
 
+  // TODO remove this, it cannot be set inthe deployment, it belongs to the runner
   getDirectoryPath(): string
 
   getTerraformVariablesObject(): object
 
   appendTemplateOutputValues(result: object);
+
+  getJsonPayload(): object; //TODO define this as a thing
 
   get name(): string
 }
@@ -63,11 +66,16 @@ export class RepositoryDemoTemplate implements DemoTemplate {
   private ref: string;
   private directoryPath: string;
 
+  private data: RepositoryDemoTemplatePayload;
+
   constructor(data: RepositoryDemoTemplatePayload) {
+    this.data = data;
+
     this.repo = {
       owner: data.owner,
       repo: data.repo,
     };
+
     this.ref = data.ref || 'main';
     this.directoryPath = data.directory_path || '';
   }
@@ -87,6 +95,10 @@ export class RepositoryDemoTemplate implements DemoTemplate {
     }
 
     return false;
+  }
+
+  getJsonPayload(): RepositoryDemoTemplatePayload {
+    return this.data;
   }
 
   getDirectoryPath(): string {
@@ -121,6 +133,10 @@ export class ContainerDemoTemplate implements DemoTemplate {
     this.containerName = data.name;
     this.version = data.version;
     this.ghcr = data.container_registry || `ghcr.io`;
+  }
+
+  getJsonPayload(): object {
+    throw new Error();
   }
 
   getDirectoryPath(): string {

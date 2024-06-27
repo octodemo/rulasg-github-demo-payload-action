@@ -1,12 +1,11 @@
 import { Octokit } from '@octokit/rest';
-import { expect } from 'chai';
+import { describe, beforeAll, beforeEach, afterAll, afterEach, it, expect } from 'vitest';
+// import { expect } from 'chai';
 import { GitHubDeploymentManager } from './GitHubDeploymentManager';
 import { Repository } from './types';
 import { getOctokit, getRepository } from './util';
 
 describe('DeploymentManager', function () {
-
-  this.timeout(10000);
 
   let deploymentManager: GitHubDeploymentManager;
 
@@ -14,7 +13,7 @@ describe('DeploymentManager', function () {
 
   let repo: Repository;
 
-  before(() => {
+  beforeAll(() => {
     octokit = getOctokit();
     repo = getRepository();
 
@@ -28,11 +27,11 @@ describe('DeploymentManager', function () {
 
     let environment;
 
-    before('initialize environment', async () => {
+    beforeAll(async () => {
       environment = await createEnvironmentDeployment('octodemo/pm-automation-001');
     });
 
-    after('remove test environment', async () => {
+    afterAll(async () => {
       if (environment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
@@ -149,11 +148,11 @@ describe('DeploymentManager', function () {
 
     let deployment;
 
-    before('initialize test deployment', async () => {
+    beforeAll(async () => {
       deployment = await deploymentManager.createDemoDeployment(DEPLOYMENT_NAME, UUID, { name: 'value' });
     });
 
-    after('remove test deployemnt', async () => {
+    afterAll(async () => {
       if (deployment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
