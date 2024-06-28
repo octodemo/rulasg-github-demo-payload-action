@@ -16,4 +16,4 @@ outputs:
 
 runs:
   using: node20
-  main: './dist/create-demo-template-definition/index.js'
+  main: '../dist/create-demo-template-definition/index.js'
