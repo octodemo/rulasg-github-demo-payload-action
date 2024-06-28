@@ -38231,7 +38231,7 @@ async function exec() {
     if (templateData) {
         lib_core.setOutput('demo_template_data', JSON.stringify(templateData));
         // Extract the other data that might be present
-        const otherData = filterObjectKeys(data, [
+        const otherData = filterObjectKeys(parsed, [
             'templateType',
             'templateOwner',
             'templateRepo',
