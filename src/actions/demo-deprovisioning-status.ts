@@ -1,11 +1,11 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DEMO_STATES } from '../constants';
-import { DemoDeployment } from '../DemoDeployment';
-import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { DeploymentState } from '../types';
-import { getOctokit, getRequiredInput } from '../util';
+import { DEMO_STATES } from '../constants.js';
+import { DemoDeployment } from '../DemoDeployment.js';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import { DeploymentState } from '../types.js';
+import { getOctokit, getRequiredInput } from '../util.js';
 
 async function run() {
   try {

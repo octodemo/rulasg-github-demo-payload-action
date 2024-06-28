@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DEMO_STATES, LIFECYCLE_STATES } from '../constants';
-import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput } from '../util';
+import { DEMO_STATES, LIFECYCLE_STATES } from '../constants.js';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import { getOctokit, getRequiredInput } from '../util.js';
 
 async function run() {
   try {

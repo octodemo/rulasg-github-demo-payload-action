@@ -1,8 +1,8 @@
 import { Octokit } from "@octokit/rest";
-import { DEMO_STATES } from "./constants";
-import { DemoDeployment } from "./DemoDeployment";
-import { GitHubDeploymentManager } from "./GitHubDeploymentManager";
-import { DeploymentState, DeploymentStatus, Repository } from "./types";
+import { DEMO_STATES } from "./constants.js";
+import { DemoDeployment } from "./DemoDeployment.js";
+import { GitHubDeploymentManager } from "./GitHubDeploymentManager.js";
+import { DeploymentState, DeploymentStatus, Repository } from "./types.js";
 
 export type DemoReview = {
   demo: DemoDeployment,

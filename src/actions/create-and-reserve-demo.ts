@@ -1,12 +1,13 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DemoDeployment } from '../DemoDeployment';
-import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { DEMO_STATES } from '../constants';
-import { getOctokit, getRequiredInput, getTags, repositoryExists } from '../util';
-import { DemoTemplate, getDemoTemplate } from '../demo-payload/DemoTemplate';
-import { DemoPayload } from '../demo-payload/DemoPayload';
+import { DemoDeployment } from '../DemoDeployment.js';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import { DEMO_STATES } from '../constants.js';
+import { DemoPayload } from '../demo-payload/DemoPayload.js';
+import { DemoTemplateDefinitionObject, getDemoTemplateDefinition } from '../demo-payload/DemoTemplateDefinitionObject.js';
+import { DemoSchema, getDemoTemplateDefinitionFromJsonString } from '../demo-payload/TypeValidations.js';
+import { getOctokit, getRequiredInput, getTags, repositoryExists } from '../util.js';
 
 async function run() {
   try {
@@ -20,9 +21,10 @@ run();
 
 
 async function exec() {
-  let template: DemoTemplate;
+  let template: DemoTemplateDefinitionObject;
   try {
-    template = getDemoTemplate(getRequiredInput('template_data'));
+    const parsed = await getDemoTemplateDefinitionFromJsonString(getRequiredInput('template_data'));
+    template = getDemoTemplateDefinition(parsed);
   } catch (err: any) {
     core.setFailed(err);
     return;
@@ -43,7 +45,7 @@ async function exec() {
 
   let demoConfig = undefined;
   try {
-    let config = core.getInput('demo_config');
+    let config = core.getInput('demo_config_data');
     if (config && config.trim().length > 0) {
       demoConfig =  config ? JSON.parse(config) : undefined;
     }
@@ -112,7 +114,21 @@ async function exec() {
           owner: inputs.target.owner,
           repo: potentialRepositoryName,
         };
-        payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
+
+        const demoDefinition: DemoSchema = {
+          version: 1,
+          demo_definition: inputs.template.definition,
+          communication_issue_number: inputs.issue ? parseInt(inputs.issue) : undefined,
+          uuid: inputs.uuid,
+          requestor_handle: inputs.user,
+          github_repository: targetRepo,
+          resources: undefined,
+          demo_config: demoConfig,
+        };
+
+
+        // payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
+        payload = new DemoPayload(demoDefinition);
 
         core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
 
@@ -121,11 +137,7 @@ async function exec() {
           // Provide the outputs to the workflow
           payload.setActionsOutputs();
 
-          demoDeployment = await deploymentManager.createDemoDeployment(
-            `${payload.target.owner}/${payload.target.repo}`,
-            inputs.uuid,
-            payload.getTerraformVariables()
-          );
+          demoDeployment = await deploymentManager.createDemoDeployment(payload);
           core.info(`  reserved repository`);
         } else {
           core.info(`  failed validation (${JSON.stringify(validation)}), skipping`);
@@ -154,7 +166,7 @@ async function exec() {
 
     if (payload) {
       core.startGroup('Action outputs');
-      core.info(JSON.stringify(payload.getOutputs(), null, 2));
+      core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
       core.endGroup();
 
       core.startGroup('Terraform variables');

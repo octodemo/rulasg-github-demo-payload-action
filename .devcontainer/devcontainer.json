@@ -9,7 +9,8 @@
         "ms-azuretools.vscode-docker",
         "christian-kohler.npm-intellisense",
         "github.github-vscode-theme",
-        "vitest.explorer"
+        "vitest.explorer",
+        "GitHub.copilot"
       ],
       "settings": {
         "telemetry.enableTelemetry": false,

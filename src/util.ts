@@ -96,3 +96,15 @@ export async function repositoryBranchExists(octokit: Octokit, repo: Repository,
     throw new Error(`Failed to resolve repository ref(${ref}) on ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
   }
 }
+
+export function filterObjectKeys(originalObject: object, keysToRemove: string[]): object {
+  const filteredObject = {};
+
+  Object.keys(originalObject).forEach(key => {
+    if (!keysToRemove.includes(key)) {
+      filteredObject[key] = originalObject[key];
+    }
+  });
+
+  return filteredObject;
+}

@@ -1,0 +1,19 @@
+name: 'GitHub Demo Definition'
+description: Builds a demo definition providing it as outputs and registers a deployment to track the demo lifecycle.
+author: 'Peter Murray'
+
+inputs:
+  json_data:
+    description: The JSON encoded data for the template reference as provided from the issue forms
+    required: true
+
+outputs:
+  demo_template_data:
+    description: The JSON encoded data for the template reference.
+
+  other_data:
+    description: Additional data values provided in the inputs that were not part of the template reference.
+
+runs:
+  using: node20
+  main: './dist/create-demo-template-definition/index.js'

@@ -38,8 +38,8 @@ inputs:
     description: An Issue number that is tracking the lifecycle of the demo repository. This is optional
     required: false
 
-  demo_config:
-    description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
+  demo_config_data:
+    description: A JSON payload (encoded as a string) of demo custom configuration details, optional, all keys in camel case.
     required: false
 
   tags:

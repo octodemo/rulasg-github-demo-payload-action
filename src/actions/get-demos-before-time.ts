@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DemoDeployment } from '../DemoDeployment';
-import { DemoDeploymentReview } from '../DemoDeploymentReview';
-import { getOctokit, getRequiredInput } from '../util';
+import { DemoDeployment } from '../DemoDeployment.js';
+import { DemoDeploymentReview } from '../DemoDeploymentReview.js';
+import { getOctokit, getRequiredInput } from '../util.js';
 
 async function run() {
   try {

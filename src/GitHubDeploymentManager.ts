@@ -1,7 +1,8 @@
 import { Octokit } from '@octokit/rest';
-import { DemoDeployment } from './DemoDeployment';
-import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
-import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types';
+import { DemoDeployment } from './DemoDeployment.js';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
+import { DemoPayload } from './demo-payload/DemoPayload.js';
+import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types.js';
 
 export class GitHubDeploymentManager {
 
@@ -146,16 +147,17 @@ export class GitHubDeploymentManager {
     });
   }
 
-  createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
+  // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
+  createDemoDeployment(demo: DemoPayload): Promise<DemoDeployment> {
     return this.github.rest.repos.createDeployment({
       ...this.repo,
       ref: this.ref,
       task: DEMO_DEPLOYMENT_TASK,
       auto_merge: false,
       required_contexts: [],
-      environment: `demo/${name}`,
-      payload: payload,
-      description: `uuid:${uuid}`,
+      environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
+      payload: demo.asJsonString,
+      description: `uuid:${demo.uuid}`,
       transient_environment: true,
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'
@@ -278,10 +280,10 @@ export class GitHubDeploymentManager {
     });
   }
 
-  private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
+  private extractDemoDeploymentsFromResponse(resp: any): DemoDeployment[] | undefined {
     if (resp && resp.length > 0) {
       const results: DemoDeployment[] = [];
-      resp.forEach(demo => {
+      resp.forEach((demo: {[key: string]: string}) => {
         results.push(this.extractDemoDeployment(demo));
       });
       return results;

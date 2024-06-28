@@ -1,12 +1,7 @@
-export type Repository = {
-  owner: string,
-  repo: string
-}
+import { Repository as VineRepository } from './demo-payload/TypeValidations.js';
+export type Repository = VineRepository;
 
 export type DeploymentState = 'error' | 'failure' | 'inactive' | 'in_progress' | 'queued' | 'pending' | 'success'
-
-
-
 
 export type DeploymentStatus = {
   id: number,

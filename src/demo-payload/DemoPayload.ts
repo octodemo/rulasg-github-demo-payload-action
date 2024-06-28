@@ -1,90 +1,78 @@
 import * as core from '@actions/core';
-import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
-import { Repository, repositoryExists, Tags } from '../util';
-import { DemoTemplate } from './DemoTemplate';
+import { repositoryExists } from '../util.js';
+import { DemoTemplateDefinitionObject, getDemoTemplateDefinition } from './DemoTemplateDefinitionObject.js';
+import { DemoSchema, Repository } from './TypeValidations.js';
 
-
-import vine from '@vinejs/vine';
-
-// const demoSchema = vine.object({
-//   version: vine.number().required(),
-
-// });
-
-
-export type Demo = {
-  version: number,
-  demo_definition: DemoVersionOne | DemoVersionTwo
-}
-
-export type DemoVersionOne = {
-  demo_template: DemoTemplate,
-
-  communication_issue_number: number,
-
-  requestor_handle: string,
-
-  resources: {
-    github: {
-      target_repository: Repository
-    },
-    azure?: {},
-    aws?: {},
-    gcp?: {},
-    azure_devops?: {},
-  }
-}
-
-// TODO remove, just here for testing
-export type DemoVersionTwo = {
-
-}
-
-
-export type Validation = {
+export type ValidationResults = {
   targetRepositoryExists: boolean,
   templateExists: boolean
 }
 
+// export function getDemoPayload(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
+//   return new DemoPayload(target, template, user, issue, demoConfig, tags);
+// }
+
+
+// export function getDemoPayloadFromJson(data: string) {
+//   try {
+//     const payload = JSON.parse(data);
+
+//     const target = {
+//       owner: payload?.github?.repository_owner,
+//       repo: payload?.github?.repository_name,
+//     };
+
+//     const template = getDemoTemplateFromJson(JSON.stringify(payload.template.data));
+
+//     const user = payload?.github?.actor;
+//     const issue = payload?.tracking_issue;
+//     const demoConfig = payload?.github_context?.demo_config;
+//     const tags = payload?.cloud_context?.tags;
+
+//     return new DemoPayload(target, template, user, issue, demoConfig, tags);
+//   } catch (err: any) {
+//     throw new Error(`The demo payload data was not valid, ${err.toString()}`);
+//   }
+// }
+
+
 export class DemoPayload {
 
-  readonly target: Repository;
+  private validation?: ValidationResults;
 
-  readonly template: DemoTemplate;
+  private data: DemoSchema;
 
-  readonly user: string;
-
-  readonly linkedIssueNumber?: number;
-
-  private demoConfig?: { [key: string]: any };
-
-  private tags?: Tags
-
-  private validation?: Validation;
-
-  constructor(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
-    this.target = target;
-    this.template = template;
-    this.user = user || github.context.actor;
-
-    if (issue) {
-      this.linkedIssueNumber = parseInt(issue);
-    }
-
-    this.demoConfig = demoConfig || undefined;
-    this.tags = tags || undefined;
+  constructor(data: DemoSchema) {
+    this.data = data;
   }
 
-  async validate(octokit: Octokit, templateOctokit?: Octokit): Promise<Validation> {
-    const templateReferenceIsValid = await this.template.isValid(templateOctokit || octokit);
+  get demoTemplate(): DemoTemplateDefinitionObject {
+    return getDemoTemplateDefinition(this.data.demo_definition);
+  }
 
-    this.validation = {
-      templateExists: templateReferenceIsValid,
-      targetRepositoryExists: await repositoryExists(octokit, this.target),
+  async validate(octokit: Octokit, templateOctokit?: Octokit): Promise<ValidationResults> {
+    if (!this.validation) {
+      const templateReferenceIsValid = await this.demoTemplate.isValid(templateOctokit || octokit);
+
+      this.validation = {
+        templateExists: templateReferenceIsValid,
+        targetRepositoryExists: await repositoryExists(octokit, this.data.github_repository),
+      }
     }
-
     return this.validation;
+  }
+
+  get repository(): Repository {
+    return this.data.github_repository;
+  }
+
+  get uuid(): string {
+    return this.data.uuid;
+  }
+
+  get asJsonString(): string {
+    return JSON.stringify(this.data);
   }
 
   getTerraformVariables(): { [key: string]: any } {
@@ -107,66 +95,72 @@ export class DemoPayload {
     //     tags: {}
     //   }
     // };
-    const result = {
-      github: {
-        actor: this.user,
-        target_repository: {
-          ...this.target
-        },
-      },
+    // const result = {
+    //   github: {
+    //     actor: this.user,
+    //     target_repository: {
+    //       ...this.target
+    //     },
+    //   },
 
-      template: {
-        data: this.template.getJsonPayload()
-      },
+    //   template: {
+    //     data: this.template.getJsonPayload()
+    //   },
 
-      azure_context: {},
-      gcp_context: {},
-      aws_context: {},
+    //   azure_context: {},
+    //   gcp_context: {},
+    //   aws_context: {},
 
-      cloud_context: {
-        tags: {}
-      }
-    };
+    //   cloud_context: {
+    //     tags: {}
+    //   }
+    // };
 
-    if (this.linkedIssueNumber) {
-      result.github_context['communication_issue_number'] = { id: this.linkedIssueNumber };
-    }
+    // if (this.linkedIssueNumber) {
+    //   result.github_context['communication_issue_number'] = { id: this.linkedIssueNumber };
+    // }
 
-    if (this.demoConfig) {
-      result.github_context['demo_config'] = this.demoConfig;
-    }
+    // if (this.demoConfig) {
+    //   result.github_context['demo_config'] = this.demoConfig;
+    // }
 
-    if (this.tags) {
-      result.cloud_context.tags = this.tags;
-    }
+    // if (this.tags) {
+    //   result.cloud_context.tags = this.tags;
+    // }
 
-    return result;
+    // return result;
+    //TODO need to provide and build this as a type as per the boostrap wrappers and the data variable it expects
+    return {};
   }
 
-  getOutputs(): { [key: string]: any } {
-    const result = {};
-    this.template.appendTemplateOutputValues(result);
+  getActionsOutputs(): {[key: string]: string} {
+    const result = {
+      version: `${this.data.version}`,
+      payload_json: JSON.stringify(this.data),
+      demo_template: this.demoTemplate.asJsonString,
+      demo_template_type: this.data.demo_definition.type,
+      communication_issue_number: `${this.data.communication_issue_number}`,
 
-    result['repository_full_name'] = `${this.target.owner}/${this.target.repo}`;
-    result['repository_owner'] = this.target.owner;
-    result['repository_name'] = this.target.repo;
+      // Old values
+      repository_full_name: `${this.repository.owner}/${this.repository.repo}`,
+      repository_owner: this.repository.owner,
+      repository_name: this.repository.repo,
+      tracking_issue: `${this.data.communication_issue_number}`,
+    };
 
-    if (this.linkedIssueNumber) {
-      result['tracking_issue'] = this.linkedIssueNumber;
-    }
+    //TODO work out what this was doing
+    // this.template.appendTemplateOutputValues(result);
 
     if (this.validation) {
       result['validation_template_exists'] = this.validation.templateExists;
       result['validation_target_repository_exists'] = this.validation.targetRepositoryExists;
     }
 
-    result['terraform_variables'] = `${JSON.stringify(this.getTerraformVariables())}`
-
     return result;
   }
 
   setActionsOutputs(): void {
-    const outputs = this.getOutputs();
+    const outputs = this.getActionsOutputs();
 
     Object.keys(outputs).forEach(key => {
       core.setOutput(key, outputs[key]);

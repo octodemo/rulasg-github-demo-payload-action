@@ -1,6 +1,6 @@
-import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
-import { GitHubDeploymentManager } from './GitHubDeploymentManager';
-import { DemoPayloadContext, GitHubDeployment, DeploymentStatus } from './types';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
+import { GitHubDeploymentManager } from './GitHubDeploymentManager.js';
+import { DemoPayloadContext, GitHubDeployment, DeploymentStatus } from './types.js';
 
 const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
 const ENVIRONMENT_NAME_PREFIX = 'demo/';
