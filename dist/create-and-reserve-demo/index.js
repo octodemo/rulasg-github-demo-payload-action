@@ -38359,7 +38359,6 @@ class ContainerDemoTemplateDefintion extends DemoTemplateDefinitionObject {
 ;// CONCATENATED MODULE: ./lib/demo-payload/DemoPayload.js
 
 
-
 // export function getDemoPayload(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
 //   return new DemoPayload(target, template, user, issue, demoConfig, tags);
 // }
@@ -38399,6 +38398,9 @@ class DemoPayload {
         }
         return this.validation;
     }
+    get version() {
+        return this.data.version;
+    }
     get repository() {
         return this.data.github_repository;
     }
@@ -38413,6 +38415,21 @@ class DemoPayload {
     }
     get actor() {
         return this.data.requestor_handle;
+    }
+    get templateType() {
+        return this.data.demo_definition.type;
+    }
+    get templateJsonString() {
+        return JSON.stringify(this.data.demo_definition);
+    }
+    get additionalConfig() {
+        return this.data.demo_config;
+    }
+    get additionConfigJsonString() {
+        if (!this.data.demo_config) {
+            return '{}';
+        }
+        return JSON.stringify(this.data.demo_config);
     }
     getTerraformVariables() {
         // const result = {
@@ -38460,33 +38477,6 @@ class DemoPayload {
         // return result;
         //TODO need to provide and build this as a type as per the boostrap wrappers and the data variable it expects
         return {};
-    }
-    getActionsOutputs() {
-        const result = {
-            version: `${this.data.version}`,
-            payload_json: JSON.stringify(this.data),
-            demo_template: this.demoTemplate.asJsonString,
-            demo_template_type: this.data.demo_definition.type,
-            communication_issue_number: `${this.data.communication_issue_number}`,
-            // Old values
-            repository_full_name: `${this.repository.owner}/${this.repository.repo}`,
-            repository_owner: this.repository.owner,
-            repository_name: this.repository.repo,
-            tracking_issue: `${this.data.communication_issue_number}`,
-        };
-        //TODO work out what this was doing
-        // this.template.appendTemplateOutputValues(result);
-        if (this.validation) {
-            result['validation_template_exists'] = this.validation.templateExists;
-            result['validation_target_repository_exists'] = this.validation.targetRepositoryExists;
-        }
-        return result;
-    }
-    setActionsOutputs() {
-        const outputs = this.getActionsOutputs();
-        Object.keys(outputs).forEach(key => {
-            lib_core.setOutput(key, outputs[key]);
-        });
     }
 }
 //# sourceMappingURL=DemoPayload.js.map
@@ -39031,8 +39021,6 @@ async function exec() {
                 lib_core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
                 const validation = await payload.validate(octokit, templateOctokit);
                 if (validation.templateExists && !validation.targetRepositoryExists) {
-                    // Provide the outputs to the workflow
-                    payload.setActionsOutputs();
                     demoDeployment = await deploymentManager.createDemoDeployment(payload);
                     lib_core.info(`  reserved repository`);
                 }
@@ -39049,22 +39037,22 @@ async function exec() {
         lib_core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
     }
     else {
+        lib_core.startGroup('Demo Deployment');
         lib_core.setOutput('demo_deployment_id', demoDeployment.id);
         lib_core.setOutput('demo_deployment_name', demoDeployment.name);
         lib_core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
+        lib_core.endGroup();
         // Show the demo deployment in progress
         await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', DEMO_STATES.provisioning);
-        lib_core.startGroup('Demo Deployment');
-        lib_core.info(`id = ${demoDeployment.id}`);
-        lib_core.endGroup();
-        if (payload) {
-            lib_core.startGroup('Action outputs');
-            lib_core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
-            lib_core.endGroup();
-            lib_core.startGroup('Terraform variables');
-            lib_core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
-            lib_core.endGroup();
-        }
+        //TODO remove these as they are probably not needed in the use of the action in the workflows
+        // if (payload) {
+        //   core.startGroup('Action outputs');
+        //   core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
+        //   core.endGroup();
+        //   core.startGroup('Terraform variables');
+        //   core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
+        //   core.endGroup();
+        // }
     }
 }
 function loadNames(value) {

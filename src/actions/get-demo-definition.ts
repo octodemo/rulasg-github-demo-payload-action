@@ -41,20 +41,22 @@ async function exec() {
 
   const demoPayload = demoDeployment.payload;
   if (demoPayload) {
-    setOutput('demo_deployment_payload', JSON.stringify(demoPayload));
-    //TODO split these out
+    setOutput('demo_deployment_payload_json', JSON.stringify(demoPayload));
 
-    //TODO finish this off
-    //const payload = demoDeployment.payload;
+    setOutput('demo_deployment_payload_version', demoPayload.version);
 
-    //core.startGroup('Demo Deployment')
-    //core.info(`id = ${demoDeployment.id}`);
-    //core.endGroup();
+    setOutput('demo_deployment_payload_template_type', demoPayload.templateType);
+    setOutput('demo_deployment_payload_template_json', demoPayload.templateJsonString);
 
-    //core.startGroup('Action outputs');
-    //core.info(JSON.stringify(demoDeployment.getOutputs(), null, 2));
-    //core.endGroup();
+    setOutput('demo_deployment_payload_requestor', demoPayload.actor);
+    setOutput('demo_deployment_payload_demo_config_json', demoPayload.additionConfigJsonString);
 
+    const repo = demoPayload.repository;
+    setOutput('demo_deployment_github_repository_owner', repo.owner);
+    setOutput('demo_deployment_github_repository_name', repo.repo);
+    setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
+
+    //TODO finish this off, the terraform variables might need another action to get them instead?
     //core.startGroup('Terraform variables');
     //core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
   }

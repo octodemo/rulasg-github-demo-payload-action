@@ -134,9 +134,6 @@ async function exec() {
 
         const validation = await payload.validate(octokit, templateOctokit);
         if (validation.templateExists && !validation.targetRepositoryExists) {
-          // Provide the outputs to the workflow
-          payload.setActionsOutputs();
-
           demoDeployment = await deploymentManager.createDemoDeployment(payload);
           core.info(`  reserved repository`);
         } else {
@@ -153,26 +150,27 @@ async function exec() {
   if (!demoDeployment) {
     core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
   } else {
+    core.startGroup('Demo Deployment');
+
     core.setOutput('demo_deployment_id', demoDeployment.id);
     core.setOutput('demo_deployment_name', demoDeployment.name);
     core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
 
+    core.endGroup();
+
     // Show the demo deployment in progress
     await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', DEMO_STATES.provisioning);
 
-    core.startGroup('Demo Deployment')
-    core.info(`id = ${demoDeployment.id}`);
-    core.endGroup();
+    //TODO remove these as they are probably not needed in the use of the action in the workflows
+    // if (payload) {
+    //   core.startGroup('Action outputs');
+    //   core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
+    //   core.endGroup();
 
-    if (payload) {
-      core.startGroup('Action outputs');
-      core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
-      core.endGroup();
-
-      core.startGroup('Terraform variables');
-      core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
-      core.endGroup();
-    }
+    //   core.startGroup('Terraform variables');
+    //   core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
+    //   core.endGroup();
+    // }
   }
 }
 

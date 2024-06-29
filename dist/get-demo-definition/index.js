@@ -38359,7 +38359,6 @@ class ContainerDemoTemplateDefintion extends DemoTemplateDefinitionObject {
 ;// CONCATENATED MODULE: ./lib/demo-payload/DemoPayload.js
 
 
-
 // export function getDemoPayload(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
 //   return new DemoPayload(target, template, user, issue, demoConfig, tags);
 // }
@@ -38399,6 +38398,9 @@ class DemoPayload {
         }
         return this.validation;
     }
+    get version() {
+        return this.data.version;
+    }
     get repository() {
         return this.data.github_repository;
     }
@@ -38413,6 +38415,21 @@ class DemoPayload {
     }
     get actor() {
         return this.data.requestor_handle;
+    }
+    get templateType() {
+        return this.data.demo_definition.type;
+    }
+    get templateJsonString() {
+        return JSON.stringify(this.data.demo_definition);
+    }
+    get additionalConfig() {
+        return this.data.demo_config;
+    }
+    get additionConfigJsonString() {
+        if (!this.data.demo_config) {
+            return '{}';
+        }
+        return JSON.stringify(this.data.demo_config);
     }
     getTerraformVariables() {
         // const result = {
@@ -38460,33 +38477,6 @@ class DemoPayload {
         // return result;
         //TODO need to provide and build this as a type as per the boostrap wrappers and the data variable it expects
         return {};
-    }
-    getActionsOutputs() {
-        const result = {
-            version: `${this.data.version}`,
-            payload_json: JSON.stringify(this.data),
-            demo_template: this.demoTemplate.asJsonString,
-            demo_template_type: this.data.demo_definition.type,
-            communication_issue_number: `${this.data.communication_issue_number}`,
-            // Old values
-            repository_full_name: `${this.repository.owner}/${this.repository.repo}`,
-            repository_owner: this.repository.owner,
-            repository_name: this.repository.repo,
-            tracking_issue: `${this.data.communication_issue_number}`,
-        };
-        //TODO work out what this was doing
-        // this.template.appendTemplateOutputValues(result);
-        if (this.validation) {
-            result['validation_template_exists'] = this.validation.templateExists;
-            result['validation_target_repository_exists'] = this.validation.targetRepositoryExists;
-        }
-        return result;
-    }
-    setActionsOutputs() {
-        const outputs = this.getActionsOutputs();
-        Object.keys(outputs).forEach(key => {
-            lib_core.setOutput(key, outputs[key]);
-        });
     }
 }
 //# sourceMappingURL=DemoPayload.js.map
@@ -38943,16 +38933,17 @@ async function exec() {
     }
     const demoPayload = demoDeployment.payload;
     if (demoPayload) {
-        setOutput('demo_deployment_payload', JSON.stringify(demoPayload));
-        //TODO split these out
-        //TODO finish this off
-        //const payload = demoDeployment.payload;
-        //core.startGroup('Demo Deployment')
-        //core.info(`id = ${demoDeployment.id}`);
-        //core.endGroup();
-        //core.startGroup('Action outputs');
-        //core.info(JSON.stringify(demoDeployment.getOutputs(), null, 2));
-        //core.endGroup();
+        setOutput('demo_deployment_payload_json', JSON.stringify(demoPayload));
+        setOutput('demo_deployment_payload_version', demoPayload.version);
+        setOutput('demo_deployment_payload_template_type', demoPayload.templateType);
+        setOutput('demo_deployment_payload_template_json', demoPayload.templateJsonString);
+        setOutput('demo_deployment_payload_requestor', demoPayload.actor);
+        setOutput('demo_deployment_payload_demo_config_json', demoPayload.additionConfigJsonString);
+        const repo = demoPayload.repository;
+        setOutput('demo_deployment_github_repository_owner', repo.owner);
+        setOutput('demo_deployment_github_repository_name', repo.repo);
+        setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
+        //TODO finish this off, the terraform variables might need another action to get them instead?
         //core.startGroup('Terraform variables');
         //core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
     }
