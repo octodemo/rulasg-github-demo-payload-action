@@ -18,9 +18,9 @@
     "build:review-demo-deployments": "ncc build lib/actions/review-demo-deployments.js -o dist/review-demo-deployments --source-map",
     "build:get-demos-to-terminate": "ncc build lib/actions/get-demos-to-terminate.js -o dist/get-demos-to-terminate --source-map",
     "build:get-demos-before-time": "ncc build lib/actions/get-demos-before-time.js -o dist/get-demos-before-time --source-map",
-    "build:actions": "npm run build && npm run build:create-demo-template-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate && npm run build:get-demos-before-time && npm run build:create-and-reserve-demo",
+    "build:get-demo-definition": "ncc build lib/actions/get-demo-definition.js -o dist/get-demo-definition --source-map",
+    "build:actions": "npm run build && npm run build:create-demo-template-definition && npm run build:demo-repository-secrets && npm run build:extract-demo-definition && npm run build:deactivate-demo-definition && npm run build:update-issue-labels && npm run build:demo-provisioning-status && npm run build:demo-lifecycle-status && npm run build:demo-deprovisioning-status && npm run build:review-demo-deployments && npm run build:get-demos-to-terminate && npm run build:get-demos-before-time && npm run build:create-and-reserve-demo && npm run build:get-demo-definition",
     "package": "npm run build && npm run build:actions",
-    "package_action": "npx ncc build src/actions/create-and-reserve-demo.ts -o dist --source-map --license licenses.txt",
     "test": "vitest run"
   },
   "repository": {
