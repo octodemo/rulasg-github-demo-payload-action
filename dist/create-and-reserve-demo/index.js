@@ -33026,511 +33026,6 @@ var core = __nccwpck_require__(2186);
 var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
-;// CONCATENATED MODULE: ./lib/constants.js
-const DEMO_DEPLOYMENT_TASK = 'demo:deployment';
-const DEMO_STATES = {
-    provisioning: 'demo::provisioning',
-    provisioned: 'demo::provisioned',
-    destroying: 'demo::destroying',
-    destroyed: 'demo::destroyed',
-    error: 'demo::error',
-    marked_hold: 'demo::lifecycle_hold',
-    marked_warning: 'demo::lifecycle_warning',
-    marked_termination: 'demo::lifecycle_terminate',
-};
-const LIFECYCLE_STATES = {
-    hold: 'hold',
-    warning: 'warning',
-    termination: 'terminate',
-    unhold: 'unhold',
-};
-//# sourceMappingURL=constants.js.map
-;// CONCATENATED MODULE: ./lib/DemoDeployment.js
-
-const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
-const ENVIRONMENT_NAME_PREFIX = 'demo/';
-class DemoDeployment {
-    data;
-    deploymentManager;
-    constructor(data, deploymentManager) {
-        if (data.task !== DEMO_DEPLOYMENT_TASK) {
-            throw new Error(`Invalid payload type ${data.task}`);
-        }
-        this.data = data;
-        this.deploymentManager = deploymentManager;
-    }
-    get id() {
-        return this.data.id;
-    }
-    get name() {
-        return this.data.environment;
-    }
-    get description() {
-        return this.data.description;
-    }
-    get uuid() {
-        const description = this.description;
-        if (description) {
-            const matched = /uuid\:(.*)/.exec(description);
-            if (matched) {
-                return matched[1];
-            }
-        }
-        return undefined;
-    }
-    get environment() {
-        if (this.data.environment.indexOf(ENVIRONMENT_NAME_PREFIX) === 0) {
-            return this.data.environment.substring(ENVIRONMENT_NAME_PREFIX.length);
-        }
-        return this.data.environment;
-    }
-    get payload() {
-        return this.data.payload;
-    }
-    getCurrentStatus() {
-        return this.deploymentManager.getDeploymentStatus(this.id);
-    }
-    async isActive() {
-        const status = await this.getCurrentStatus();
-        if (status) {
-            return status.state === 'success';
-        }
-        return false;
-    }
-    async isErrored() {
-        return this.getCurrentStatus()
-            .then(status => {
-            if (status) {
-                return status.state === 'failure' || status.state === 'error';
-            }
-            return false;
-        });
-    }
-    async isMarkedForTermination() {
-        return this.getCurrentStatus()
-            .then(status => {
-            return status?.state === 'success' && status?.description === DEMO_STATES.marked_termination;
-        });
-    }
-    async getActiveDays() {
-        const isActive = await this.isActive();
-        if (isActive) {
-            return await this.getDaysInState();
-        }
-        return 0;
-    }
-    async getDaysInState() {
-        return this.getCurrentStatus().then(status => {
-            if (status) {
-                const now = Date.now(), updated = new Date(status.created_at).getTime();
-                return Math.floor((now - updated) / DAY_IN_MILLISECONDS);
-            }
-            return 0;
-        });
-    }
-    getTrackingIssue() {
-        const payloadData = this.payload;
-        if (payloadData) {
-            return payloadData?.github_context?.tracking_issue?.id;
-        }
-        return undefined;
-    }
-    async isDuplicate() {
-        const issueId = this.getTrackingIssue();
-        if (issueId) {
-            const labels = await this.deploymentManager.getIssueLabels(issueId);
-            return labels.indexOf('duplicate') > -1;
-        }
-        return false;
-    }
-    getCreatedAt() {
-        return this.data.created_at;
-    }
-}
-//# sourceMappingURL=DemoDeployment.js.map
-;// CONCATENATED MODULE: ./lib/GitHubDeploymentManager.js
-
-
-class GitHubDeploymentManager {
-    github;
-    repo;
-    ref;
-    constructor(repo, github, ref) {
-        this.repo = repo;
-        this.github = github;
-        this.ref = ref || 'main';
-    }
-    getDemoDeploymentForUUID(uuid) {
-        return this.getAllDemoDeployments()
-            .then(deployments => {
-            let matched = deployments?.filter((deployment) => deployment.uuid === uuid);
-            if (matched && matched.length > 0) {
-                return matched[0];
-            }
-        });
-    }
-    getDeploymentStatus(id) {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
-            ...this.repo,
-            deployment_id: id,
-            per_page: 100,
-        }).then(statuses => {
-            if (statuses && statuses.length > 0) {
-                //@ts-ignore
-                return createDeploymentStatus(statuses[0]);
-            }
-            return undefined;
-        });
-    }
-    deactivateDeployment(id) {
-        return this.github.rest.repos.createDeploymentStatus({
-            ...this.repo,
-            deployment_id: id,
-            state: 'inactive',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 201;
-        });
-    }
-    deleteDeployment(id) {
-        return this.github.rest.repos.deleteDeployment({
-            ...this.repo,
-            deployment_id: id,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 204;
-        });
-    }
-    deactivateAndDeleteDeployment(id) {
-        const self = this;
-        return self.deactivateDeployment(id)
-            .then(() => {
-            return self.deleteDeployment(id);
-        });
-    }
-    getEnvironmentDeployments(name) {
-        return this.github.rest.repos.listDeployments({
-            ...this.repo,
-            environment: name,
-            task: 'deploy',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.status === 200 && resp.data) {
-                return resp.data.map(extractDeployment);
-            }
-            return undefined;
-        });
-    }
-    getEnvironmentDeploymentId(name) {
-        return this.getEnvironmentDeployments(name)
-            .then(results => {
-            if (results && results.length > 0) {
-                return results[0].id;
-            }
-            return undefined;
-        });
-    }
-    getAllDemoDeployments() {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
-            ...this.repo,
-            task: DEMO_DEPLOYMENT_TASK,
-            per_page: 100
-        }).then(deployments => {
-            return this.extractDemoDeploymentsFromResponse(deployments);
-        });
-    }
-    getDemoDeployments(name) {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
-            ...this.repo,
-            environment: `demo/${name}`,
-            task: DEMO_DEPLOYMENT_TASK,
-            per_page: 100
-        }).then(deployments => {
-            return this.extractDemoDeploymentsFromResponse(deployments);
-        });
-    }
-    getDemoDeployment(name) {
-        return this.getDemoDeployments(name)
-            .then(results => {
-            if (results && results.length > 0) {
-                return results[0];
-            }
-            return undefined;
-        });
-    }
-    getDemoDeploymentById(id) {
-        return this.github.rest.repos.getDeployment({
-            ...this.repo,
-            deployment_id: id,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
-                throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
-            }
-            return this.extractDemoDeployment(resp.data);
-        });
-    }
-    // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
-    createDemoDeployment(demo) {
-        return this.github.rest.repos.createDeployment({
-            ...this.repo,
-            ref: this.ref,
-            task: DEMO_DEPLOYMENT_TASK,
-            auto_merge: false,
-            required_contexts: [],
-            environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
-            payload: demo.asJsonString,
-            description: `uuid:${demo.uuid}`,
-            transient_environment: true,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            },
-        }).then(result => {
-            return this.extractDemoDeployment(result.data);
-        });
-    }
-    setDemoDeploymentStateProvisioning(id) {
-        return this.updateDeploymentStatus(id, 'in_progress', DEMO_STATES.provisioning);
-    }
-    setDemoDeploymentStateProvisioned(id) {
-        return this.updateDeploymentStatus(id, 'success', DEMO_STATES.provisioned);
-    }
-    setDemoDeploymentStateErrored(id) {
-        return this.updateDeploymentStatus(id, 'error', DEMO_STATES.error);
-    }
-    updateDeploymentStatus(id, state, description, logUrl) {
-        const payload = {
-            ...this.repo,
-            deployment_id: id,
-            state: state,
-            auto_inactive: true,
-            description: description ?? '',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            },
-        };
-        if (logUrl) {
-            payload['log_url'] = logUrl;
-        }
-        return this.github.rest.repos.createDeploymentStatus(payload)
-            .then(resp => {
-            if (resp.status !== 201) {
-                throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
-            }
-            return createDeploymentStatus(resp.data);
-        });
-    }
-    getIssueLabels(issueId) {
-        return this.github.rest.issues.listLabelsOnIssue({
-            ...this.repo,
-            issue_number: issueId,
-            per_page: 100,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.data.map(label => label.name);
-        }).catch(() => {
-            return [];
-        });
-    }
-    addIssueLabels(issueId, ...label) {
-        return this.github.rest.issues.addLabels({
-            ...this.repo,
-            issue_number: issueId,
-            labels: label,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.status === 200) {
-                return true;
-            }
-            else if (resp.status === 410) {
-                return false;
-            }
-            else {
-                throw new Error(`Unexpected status code ${resp.status} when adding labels to issue ${issueId}`);
-            }
-        });
-    }
-    removeIssueLabels(issueId, ...label) {
-        const promises = [];
-        label.forEach(label => {
-            const promise = this.github.rest.issues.removeLabel({
-                ...this.repo,
-                issue_number: issueId,
-                name: label,
-                headers: {
-                    'X-GitHub-Api-Version': '2022-11-28'
-                }
-            })
-                .catch(err => {
-                // Ignore errors that prove the label is not there
-                if (err.status !== 404 && err.status !== 410) {
-                    throw err;
-                }
-            }).then(() => {
-                return true;
-            });
-            promises.push(promise);
-        });
-        return Promise.all(promises).then(results => {
-            return true;
-        });
-    }
-    addIssueComment(id, comment) {
-        return this.github.rest.issues.createComment({
-            ...this.repo,
-            issue_number: id,
-            body: comment,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 201;
-        });
-    }
-    extractDemoDeploymentsFromResponse(resp) {
-        if (resp && resp.length > 0) {
-            const results = [];
-            resp.forEach((demo) => {
-                results.push(this.extractDemoDeployment(demo));
-            });
-            return results;
-        }
-        return undefined;
-    }
-    extractDemoDeployment(deployment) {
-        return new DemoDeployment(extractDeployment(deployment), this);
-    }
-}
-function extractDeployment(deployment) {
-    // @ts-ignore
-    const result = {};
-    ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'environment'].forEach(key => {
-        result[key] = deployment[key];
-    });
-    if (deployment.payload) {
-        if (typeof deployment.payload === 'string' || deployment.payload instanceof String) {
-            //@ts-ignore
-            result.payload = JSON.parse(deployment.payload);
-        }
-        else {
-            result.payload = deployment.payload;
-        }
-    }
-    return result;
-}
-function createDeploymentStatus(status) {
-    return {
-        id: status.id,
-        state: status.state,
-        description: status.description || '',
-        environment: status.environment || '',
-        created_at: status.created_at,
-        updated_at: status.updated_at,
-        log_url: status.log_url,
-    };
-}
-//# sourceMappingURL=GitHubDeploymentManager.js.map
-;// CONCATENATED MODULE: ./lib/util.js
-
-
-function getOctokit(token) {
-    let octokitToken;
-    if (!token || token.trim().length === 0) {
-        octokitToken = getGitHubToken();
-    }
-    else {
-        octokitToken = token;
-    }
-    //@ts-ignore
-    return github.getOctokit(octokitToken);
-}
-function getGitHubToken() {
-    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
-    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
-    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
-    // fallback option
-    let token = process.env['GITHUB_TOKEN'];
-    if (!token) {
-        token = core.getInput('github_token');
-        if (!token) {
-            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
-        }
-    }
-    return token;
-}
-function getRepository() {
-    let repoOwner = process.env['GITHUB_REPO_OWNER'];
-    let repoName = process.env['GITHUB_REPO_NAME'];
-    return {
-        owner: repoOwner || 'peter-murray',
-        repo: repoName || 'github-demo-payload-action',
-    };
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-function getRequiredInput(name) {
-    return core.getInput(name, { required: true });
-}
-async function repositoryExists(octokit, repo) {
-    try {
-        await octokit.rest.repos.get(repo);
-        return true;
-    }
-    catch (err) {
-        if (err.status === 404) {
-            return false;
-        }
-        throw new Error(`Failed to resolve repository ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
-    }
-}
-async function repositoryBranchExists(octokit, repo, ref) {
-    try {
-        await octokit.rest.repos.getBranch({ ...repo, branch: ref });
-        return true;
-    }
-    catch (err) {
-        if (err.status === 404) {
-            return false;
-        }
-        throw new Error(`Failed to resolve repository ref(${ref}) on ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
-    }
-}
-function filterObjectKeys(originalObject, keysToRemove) {
-    const filteredObject = {};
-    Object.keys(originalObject).forEach(key => {
-        if (!keysToRemove.includes(key)) {
-            filteredObject[key] = originalObject[key];
-        }
-    });
-    return filteredObject;
-}
-//# sourceMappingURL=util.js.map
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -38555,6 +38050,114 @@ var vine_default = vine;
 
 
 //# sourceMappingURL=index.js.map
+;// CONCATENATED MODULE: ./lib/constants.js
+const DEMO_DEPLOYMENT_TASK = 'demo:deployment';
+const DEMO_STATES = {
+    provisioning: 'demo::provisioning',
+    provisioned: 'demo::provisioned',
+    destroying: 'demo::destroying',
+    destroyed: 'demo::destroyed',
+    error: 'demo::error',
+    marked_hold: 'demo::lifecycle_hold',
+    marked_warning: 'demo::lifecycle_warning',
+    marked_termination: 'demo::lifecycle_terminate',
+};
+const LIFECYCLE_STATES = {
+    hold: 'hold',
+    warning: 'warning',
+    termination: 'terminate',
+    unhold: 'unhold',
+};
+//# sourceMappingURL=constants.js.map
+;// CONCATENATED MODULE: ./lib/util.js
+
+
+function getOctokit(token) {
+    let octokitToken;
+    if (!token || token.trim().length === 0) {
+        octokitToken = getGitHubToken();
+    }
+    else {
+        octokitToken = token;
+    }
+    //@ts-ignore
+    return github.getOctokit(octokitToken);
+}
+function getGitHubToken() {
+    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
+    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
+    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
+    // fallback option
+    let token = process.env['GITHUB_TOKEN'];
+    if (!token) {
+        token = core.getInput('github_token');
+        if (!token) {
+            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
+        }
+    }
+    return token;
+}
+function getRepository() {
+    let repoOwner = process.env['GITHUB_REPO_OWNER'];
+    let repoName = process.env['GITHUB_REPO_NAME'];
+    return {
+        owner: repoOwner || 'peter-murray',
+        repo: repoName || 'github-demo-payload-action',
+    };
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+function getRequiredInput(name) {
+    return core.getInput(name, { required: true });
+}
+async function repositoryExists(octokit, repo) {
+    try {
+        await octokit.rest.repos.get(repo);
+        return true;
+    }
+    catch (err) {
+        if (err.status === 404) {
+            return false;
+        }
+        throw new Error(`Failed to resolve repository ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
+    }
+}
+async function repositoryBranchExists(octokit, repo, ref) {
+    try {
+        await octokit.rest.repos.getBranch({ ...repo, branch: ref });
+        return true;
+    }
+    catch (err) {
+        if (err.status === 404) {
+            return false;
+        }
+        throw new Error(`Failed to resolve repository ref(${ref}) on ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
+    }
+}
+function filterObjectKeys(originalObject, keysToRemove) {
+    const filteredObject = {};
+    Object.keys(originalObject).forEach(key => {
+        if (!keysToRemove.includes(key)) {
+            filteredObject[key] = originalObject[key];
+        }
+    });
+    return filteredObject;
+}
+//# sourceMappingURL=util.js.map
 ;// CONCATENATED MODULE: ./lib/demo-payload/TypeValidations.js
 
 const TEMPLATE_OPTION_CONTAINER = 'container';
@@ -38801,6 +38404,12 @@ class DemoPayload {
     get asJsonString() {
         return JSON.stringify(this.data);
     }
+    get communicationIssueNumber() {
+        return this.data.communication_issue_number;
+    }
+    get actor() {
+        return this.data.requestor_handle;
+    }
     getTerraformVariables() {
         // const result = {
         //   github_context: {
@@ -38877,6 +38486,424 @@ class DemoPayload {
     }
 }
 //# sourceMappingURL=DemoPayload.js.map
+;// CONCATENATED MODULE: ./lib/DemoDeployment.js
+
+
+
+const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
+const ENVIRONMENT_NAME_PREFIX = 'demo/';
+const GitHubDeploymentDataSchema = vine_default.object({
+    id: vine_default.number(),
+    node_id: vine_default.string(),
+    environment: vine_default.string(),
+    created_at: vine_default.string(),
+    updated_at: vine_default.string(),
+    description: vine_default.string().optional().nullable(),
+    ref: vine_default.string(),
+    task: vine_default.string(),
+    payload: vine_default.any().optional(), //TODO the APIs report this could be an object was locked to a string
+}).allowUnknownProperties();
+const GitHubDeploymentValidator = vine_default.compile(GitHubDeploymentDataSchema);
+class DemoDeployment {
+    data;
+    deploymentManager;
+    demoPayload;
+    constructor(data, deploymentManager) {
+        if (data.task !== DEMO_DEPLOYMENT_TASK) {
+            throw new Error(`Invalid payload type ${data.task}`);
+        }
+        this.data = data;
+        this.deploymentManager = deploymentManager;
+        try {
+            if (data.payload && data.payload.length > 0) {
+                this.demoPayload = new DemoPayload(JSON.parse(data.payload));
+            }
+        }
+        catch (err) {
+            this.demoPayload = undefined;
+        }
+    }
+    get id() {
+        return this.data.id;
+    }
+    get name() {
+        return this.data.environment;
+    }
+    get description() {
+        return this.data.description;
+    }
+    // In properly built deployment payloads, this should be present in the payload data
+    get uuid() {
+        const description = this.description;
+        if (description) {
+            const matched = /uuid\:(.*)/.exec(description);
+            if (matched) {
+                return matched[1];
+            }
+        }
+        return undefined;
+    }
+    get environment() {
+        if (this.data.environment.indexOf(ENVIRONMENT_NAME_PREFIX) === 0) {
+            return this.data.environment.substring(ENVIRONMENT_NAME_PREFIX.length);
+        }
+        return this.data.environment;
+    }
+    get payload() {
+        return this.demoPayload;
+    }
+    getCurrentStatus() {
+        return this.deploymentManager.getDeploymentStatus(this.id);
+    }
+    getTrackingIssue() {
+        const payloadData = this.payload;
+        if (payloadData) {
+            return this.payload.communicationIssueNumber;
+        }
+        return undefined;
+    }
+    get createdAt() {
+        return this.data.created_at;
+    }
+    async isActive() {
+        const status = await this.getCurrentStatus();
+        if (status) {
+            return status.state === 'success';
+        }
+        return false;
+    }
+    async isErrored() {
+        return this.getCurrentStatus()
+            .then(status => {
+            if (status) {
+                return status.state === 'failure' || status.state === 'error';
+            }
+            return false;
+        });
+    }
+    async isMarkedForTermination() {
+        return this.getCurrentStatus()
+            .then(status => {
+            return status?.state === 'success' && status?.description === DEMO_STATES.marked_termination;
+        });
+    }
+    async getActiveDays() {
+        const isActive = await this.isActive();
+        if (isActive) {
+            return await this.getDaysInState();
+        }
+        return 0;
+    }
+    async getDaysInState() {
+        return this.getCurrentStatus().then(status => {
+            if (status) {
+                const now = Date.now(), updated = new Date(status.created_at).getTime();
+                return Math.floor((now - updated) / DAY_IN_MILLISECONDS);
+            }
+            return 0;
+        });
+    }
+    //TODO this should no longer be possible in practice due to the way the uuids are created
+    async isDuplicate() {
+        const issueId = this.getTrackingIssue();
+        if (issueId) {
+            const labels = await this.deploymentManager.getIssueLabels(issueId);
+            return labels.indexOf('duplicate') > -1;
+        }
+        return false;
+    }
+}
+//# sourceMappingURL=DemoDeployment.js.map
+;// CONCATENATED MODULE: ./lib/GitHubDeploymentManager.js
+
+
+class GitHubDeploymentManager {
+    github;
+    repo;
+    ref;
+    constructor(repo, github, ref) {
+        this.repo = repo;
+        this.github = github;
+        this.ref = ref || 'main';
+    }
+    getDemoDeploymentForUUID(uuid) {
+        return this.getAllDemoDeployments()
+            .then(deployments => {
+            let matched = deployments?.filter((deployment) => deployment.uuid === uuid);
+            if (matched && matched.length > 0) {
+                return matched[0];
+            }
+        });
+    }
+    getDeploymentStatus(id) {
+        return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
+            ...this.repo,
+            deployment_id: id,
+            per_page: 100,
+        }).then(statuses => {
+            if (statuses && statuses.length > 0) {
+                //@ts-ignore
+                return createDeploymentStatus(statuses[0]);
+            }
+            return undefined;
+        });
+    }
+    deactivateDeployment(id) {
+        return this.github.rest.repos.createDeploymentStatus({
+            ...this.repo,
+            deployment_id: id,
+            state: 'inactive',
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            return resp.status === 201;
+        });
+    }
+    deleteDeployment(id) {
+        return this.github.rest.repos.deleteDeployment({
+            ...this.repo,
+            deployment_id: id,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            return resp.status === 204;
+        });
+    }
+    deactivateAndDeleteDeployment(id) {
+        const self = this;
+        return self.deactivateDeployment(id)
+            .then(() => {
+            return self.deleteDeployment(id);
+        });
+    }
+    getEnvironmentDeployments(name) {
+        return this.github.rest.repos.listDeployments({
+            ...this.repo,
+            environment: name,
+            task: 'deploy',
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            if (resp.status === 200 && resp.data) {
+                //@ts-ignore
+                return Promise.all(resp.data.map((data) => generateDemoDeployment(data, this)));
+            }
+            return undefined;
+        });
+    }
+    getEnvironmentDeploymentId(name) {
+        return this.getEnvironmentDeployments(name)
+            .then(results => {
+            if (results && results.length > 0) {
+                return results[0].id;
+            }
+            return undefined;
+        });
+    }
+    getAllDemoDeployments() {
+        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
+            ...this.repo,
+            task: DEMO_DEPLOYMENT_TASK,
+            per_page: 100
+        }).then(deployments => {
+            return this.extractDemoDeploymentsFromResponse(deployments);
+        });
+    }
+    getDemoDeployments(name) {
+        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
+            ...this.repo,
+            environment: `demo/${name}`,
+            task: DEMO_DEPLOYMENT_TASK,
+            per_page: 100
+        }).then(deployments => {
+            return this.extractDemoDeploymentsFromResponse(deployments);
+        });
+    }
+    getDemoDeployment(name) {
+        return this.getDemoDeployments(name)
+            .then(results => {
+            if (results && results.length > 0) {
+                return results[0];
+            }
+            return undefined;
+        });
+    }
+    getDemoDeploymentById(id) {
+        return this.github.rest.repos.getDeployment({
+            ...this.repo,
+            deployment_id: id,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
+                throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
+            }
+            return generateDemoDeployment(resp.data, this);
+        });
+    }
+    // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
+    createDemoDeployment(demo) {
+        return this.github.rest.repos.createDeployment({
+            ...this.repo,
+            ref: this.ref,
+            task: DEMO_DEPLOYMENT_TASK,
+            auto_merge: false,
+            required_contexts: [],
+            environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
+            payload: demo.asJsonString,
+            description: `uuid:${demo.uuid}`,
+            transient_environment: true,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            },
+        }).then(result => {
+            if (result.status === 201) {
+                return generateDemoDeployment(result.data, this);
+            }
+            else {
+                throw new Error(`Invalid status response ${result.status} when creating deployment`);
+            }
+        });
+    }
+    setDemoDeploymentStateProvisioning(id) {
+        return this.updateDeploymentStatus(id, 'in_progress', DEMO_STATES.provisioning);
+    }
+    setDemoDeploymentStateProvisioned(id) {
+        return this.updateDeploymentStatus(id, 'success', DEMO_STATES.provisioned);
+    }
+    setDemoDeploymentStateErrored(id) {
+        return this.updateDeploymentStatus(id, 'error', DEMO_STATES.error);
+    }
+    updateDeploymentStatus(id, state, description, logUrl) {
+        const payload = {
+            ...this.repo,
+            deployment_id: id,
+            state: state,
+            auto_inactive: true,
+            description: description ?? '',
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            },
+        };
+        if (logUrl) {
+            payload['log_url'] = logUrl;
+        }
+        return this.github.rest.repos.createDeploymentStatus(payload)
+            .then(resp => {
+            if (resp.status !== 201) {
+                throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
+            }
+            return createDeploymentStatus(resp.data);
+        });
+    }
+    getIssueLabels(issueId) {
+        return this.github.rest.issues.listLabelsOnIssue({
+            ...this.repo,
+            issue_number: issueId,
+            per_page: 100,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            return resp.data.map(label => label.name);
+        }).catch(() => {
+            return [];
+        });
+    }
+    addIssueLabels(issueId, ...label) {
+        return this.github.rest.issues.addLabels({
+            ...this.repo,
+            issue_number: issueId,
+            labels: label,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            if (resp.status === 200) {
+                return true;
+            }
+            else if (resp.status === 410) {
+                return false;
+            }
+            else {
+                throw new Error(`Unexpected status code ${resp.status} when adding labels to issue ${issueId}`);
+            }
+        });
+    }
+    removeIssueLabels(issueId, ...label) {
+        const promises = [];
+        label.forEach(label => {
+            const promise = this.github.rest.issues.removeLabel({
+                ...this.repo,
+                issue_number: issueId,
+                name: label,
+                headers: {
+                    'X-GitHub-Api-Version': '2022-11-28'
+                }
+            })
+                .catch(err => {
+                // Ignore errors that prove the label is not there
+                if (err.status !== 404 && err.status !== 410) {
+                    throw err;
+                }
+            }).then(() => {
+                return true;
+            });
+            promises.push(promise);
+        });
+        return Promise.all(promises).then(results => {
+            return true;
+        });
+    }
+    addIssueComment(id, comment) {
+        return this.github.rest.issues.createComment({
+            ...this.repo,
+            issue_number: id,
+            body: comment,
+            headers: {
+                'X-GitHub-Api-Version': '2022-11-28'
+            }
+        }).then(resp => {
+            return resp.status === 201;
+        });
+    }
+    async extractDemoDeploymentsFromResponse(resp) {
+        const manager = this;
+        if (resp && resp.length > 0) {
+            const results = await Promise.all(resp.map((data) => { return generateDemoDeployment(data, manager); }));
+            return results;
+        }
+        return undefined;
+    }
+}
+async function generateDemoDeployment(deployment, manager) {
+    //TODO could use Vine definition here to validate the payload
+    try {
+        const payload = await GitHubDeploymentValidator.validate(deployment);
+        return new DemoDeployment(payload, manager);
+    }
+    catch (err) {
+        //TODO need to extract the parsing error from VineJS
+        throw err;
+    }
+    ;
+}
+function createDeploymentStatus(status) {
+    return {
+        id: status.id,
+        state: status.state,
+        description: status.description || '',
+        environment: status.environment || '',
+        created_at: status.created_at,
+        updated_at: status.updated_at,
+        log_url: status.log_url,
+    };
+}
+//# sourceMappingURL=GitHubDeploymentManager.js.map
 ;// CONCATENATED MODULE: ./lib/actions/create-and-reserve-demo.js
 
 

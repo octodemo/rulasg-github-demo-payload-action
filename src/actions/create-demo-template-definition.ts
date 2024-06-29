@@ -1,7 +1,6 @@
 import * as core from '@actions/core';
 import { inspect } from 'util';
 import { filterObjectKeys, getRequiredInput } from '../util.js';
-
 import vine, { errors } from '@vinejs/vine';
 import { DemoTemplateDefinition } from '../demo-payload/TypeValidations.js';
 
@@ -113,6 +112,8 @@ async function exec() {
         'templateVersion',
         'templateContainerRegistry'
       ]);
+    core.info(`Remaining data: ${JSON.stringify(otherData)}`);
+    core.info(`  object type: ${typeof otherData}`);
     core.setOutput('other_data', JSON.stringify(otherData));
   } else {
     core.setFailed(`Was not able to generate demo template definition data, check your inputs.`);

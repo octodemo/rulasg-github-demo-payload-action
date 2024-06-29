@@ -1,23 +1,54 @@
-import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
+import vine from '@vinejs/vine';
+import { Infer } from '@vinejs/vine/types';
 import { GitHubDeploymentManager } from './GitHubDeploymentManager.js';
-import { DemoPayloadContext, GitHubDeployment, DeploymentStatus } from './types.js';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
+import { DemoPayload } from "./demo-payload/DemoPayload.js";
+import { DeploymentStatus } from './types.js';
 
 const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
 const ENVIRONMENT_NAME_PREFIX = 'demo/';
 
+
+const GitHubDeploymentDataSchema = vine.object({
+  id: vine.number(),
+  node_id: vine.string(),
+  environment: vine.string(),
+  created_at: vine.string(),
+  updated_at: vine.string(),
+  description: vine.string().optional().nullable(),
+  ref: vine.string(),
+  task: vine.string(),
+  payload: vine.any().optional(), //TODO the APIs report this could be an object was locked to a string
+}).allowUnknownProperties();
+
+export const GitHubDeploymentValidator = vine.compile(GitHubDeploymentDataSchema);
+
+export type GitHubDeploymentData = Infer<typeof GitHubDeploymentDataSchema>;
+
+
 export class DemoDeployment {
 
-  private readonly data: GitHubDeployment;
+  private readonly data: GitHubDeploymentData;
 
   private readonly deploymentManager: GitHubDeploymentManager;
 
-  constructor(data: GitHubDeployment, deploymentManager: GitHubDeploymentManager) {
+  private demoPayload: DemoPayload | undefined;
+
+  constructor(data: GitHubDeploymentData, deploymentManager: GitHubDeploymentManager) {
     if (data.task !== DEMO_DEPLOYMENT_TASK) {
       throw new Error(`Invalid payload type ${data.task}`);
     }
 
     this.data = data;
     this.deploymentManager = deploymentManager;
+
+    try {
+      if (data.payload && data.payload.length > 0) {
+        this.demoPayload = new DemoPayload(JSON.parse(data.payload));
+      }
+    } catch(err: any) {
+      this.demoPayload = undefined;
+    }
   }
 
   get id() {
@@ -32,6 +63,7 @@ export class DemoDeployment {
     return this.data.description;
   }
 
+  // In properly built deployment payloads, this should be present in the payload data
   get uuid() {
     const description = this.description;
     if (description) {
@@ -50,12 +82,24 @@ export class DemoDeployment {
     return this.data.environment;
   }
 
-  get payload(): DemoPayloadContext | undefined {
-    return this.data.payload;
+  get payload(): DemoPayload | undefined {
+    return this.demoPayload;
   }
 
   getCurrentStatus(): Promise<DeploymentStatus | undefined> {
     return this.deploymentManager.getDeploymentStatus(this.id);
+  }
+
+  getTrackingIssue(): number | undefined {
+    const payloadData = this.payload;
+    if (payloadData) {
+      return this.payload.communicationIssueNumber;
+    }
+    return undefined;
+  }
+
+  get createdAt(): string {
+    return this.data.created_at;
   }
 
   async isActive(): Promise<boolean> {
@@ -104,15 +148,7 @@ export class DemoDeployment {
     });
   }
 
-  getTrackingIssue(): number | undefined {
-    const payloadData = this.payload;
-
-    if (payloadData) {
-      return payloadData?.github_context?.tracking_issue?.id;
-    }
-    return undefined;
-  }
-
+  //TODO this should no longer be possible in practice due to the way the uuids are created
   async isDuplicate(): Promise<boolean> {
     const issueId = this.getTrackingIssue();
     if (issueId) {
@@ -120,9 +156,5 @@ export class DemoDeployment {
       return labels.indexOf('duplicate') > -1;
     }
     return false;
-  }
-
-  getCreatedAt(): string {
-    return this.data.created_at;
   }
 }

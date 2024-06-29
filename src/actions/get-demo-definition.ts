@@ -25,29 +25,37 @@ async function exec() {
   const demoDeployment: DemoDeployment = await deploymentManager.getDemoDeploymentById(Number.parseInt(deploymentId));
 
   core.setOutput('demo_deployment_id', demoDeployment.id);
+  core.setOutput('demo_deployment_name', demoDeployment.name);
+  core.setOutput('demo_deployment_description', demoDeployment.description);
+
+  const uuid = demoDeployment.uuid;
+  if (uuid) {
+    core.setOutput('demo_deployment_uuid', uuid);
+  }
 
   const trackingIssue = demoDeployment.getTrackingIssue();
   if (trackingIssue) {
     core.setOutput('communication_issue_number', trackingIssue);
   }
 
-  //TODO finish this off
-  // core.setOutput('demo_deployment_template_json', demoDeployment.payload.)
+  const demoPayload = demoDeployment.payload;
+  if (demoPayload) {
+    core.startGroup('Demo Deployment Payload');
+    core.setOutput('demo_deployment_payload', JSON.stringify(demoPayload));
 
+    //TODO finish this off
+    //const payload = demoDeployment.payload;
 
+    //core.startGroup('Demo Deployment')
+    //core.info(`id = ${demoDeployment.id}`);
+    //core.endGroup();
 
+    //core.startGroup('Action outputs');
+    //core.info(JSON.stringify(demoDeployment.getOutputs(), null, 2));
+    //core.endGroup();
 
-  // const payload = demoDeployment.payload;
-
-  // core.startGroup('Demo Deployment')
-  // core.info(`id = ${demoDeployment.id}`);
-  // core.endGroup();
-
-  // core.startGroup('Action outputs');
-  // core.info(JSON.stringify(demoDeployment.getOutputs(), null, 2));
-  // core.endGroup();
-
-  // core.startGroup('Terraform variables');
-  // core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
-  // core.endGroup();
+    //core.startGroup('Terraform variables');
+    //core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
+    core.endGroup();
+  }
 }

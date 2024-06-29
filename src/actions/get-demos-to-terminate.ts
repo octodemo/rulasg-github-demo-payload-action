@@ -32,7 +32,7 @@ function setOutput(name, reviews?: DemoReview[]) {
       return {
         id: review.demo.id,
         name: review.demo.name,
-        repo: review.demo.payload?.github_context.target_repository
+        repo: review.demo.payload?.repository
       };
     });
 

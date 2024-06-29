@@ -75,6 +75,14 @@ export class DemoPayload {
     return JSON.stringify(this.data);
   }
 
+  get communicationIssueNumber(): number | undefined {
+    return this.data.communication_issue_number;
+  }
+
+  get actor(): string | undefined {
+    return this.data.requestor_handle;
+  }
+
   getTerraformVariables(): { [key: string]: any } {
     // const result = {
     //   github_context: {

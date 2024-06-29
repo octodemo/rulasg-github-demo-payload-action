@@ -47,7 +47,7 @@ async function exec() {
         await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
       }
 
-      const actor: string | undefined = deployment.payload?.github_context.actor;
+      const actor: string | undefined = deployment.payload?.actor;
       if (status.demoState === DEMO_STATES.marked_warning) {
         await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
       } else if (status.demoState === DEMO_STATES.marked_termination) {

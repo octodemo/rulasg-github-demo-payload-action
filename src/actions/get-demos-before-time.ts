@@ -26,7 +26,7 @@ async function exec() {
 
   core.startGroup('Deploy Deployments');
   allDeployments.forEach(async (deployment) => {
-    const createdDate = new Date(deployment.getCreatedAt());
+    const createdDate = new Date(deployment.createdAt);
     if (createdDate.getTime() < beforeDate.getTime()) {
       results.push(deployment);
       await displayDeployment(deployment);
@@ -47,7 +47,7 @@ async function displayDeployment(deployment: DemoDeployment) {
 
   core.info(`-------------------------------------------------------------------`);
   core.info(`${deployment.name} id:${deployment.id}`);
-  core.info(`  created:        ${deployment.getCreatedAt()}`);
+  core.info(`  created:        ${deployment.createdAt}`);
   core.info(`  state:          ${status?.state}`);
   core.info(`  environment:    ${status?.environment}`);
   core.info(`  status created: ${status?.created_at}`);

@@ -38240,6 +38240,8 @@ async function exec() {
             'templateVersion',
             'templateContainerRegistry'
         ]);
+        lib_core.info(`Remaining data: ${JSON.stringify(otherData)}`);
+        lib_core.info(`  object type: ${typeof otherData}`);
         lib_core.setOutput('other_data', JSON.stringify(otherData));
     }
     else {

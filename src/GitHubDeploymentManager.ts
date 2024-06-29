@@ -1,8 +1,8 @@
 import { Octokit } from '@octokit/rest';
-import { DemoDeployment } from './DemoDeployment.js';
+import { DemoDeployment, GitHubDeploymentData, GitHubDeploymentValidator } from './DemoDeployment.js';
 import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
 import { DemoPayload } from './demo-payload/DemoPayload.js';
-import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types.js';
+import { DeploymentState, DeploymentStatus, Repository } from './types.js';
 
 export class GitHubDeploymentManager {
 
@@ -75,7 +75,7 @@ export class GitHubDeploymentManager {
       });
   }
 
-  getEnvironmentDeployments(name: string): Promise<GitHubDeployment[] | undefined> {
+  getEnvironmentDeployments(name: string): Promise<DemoDeployment[] | undefined> {
     return this.github.rest.repos.listDeployments({
       ...this.repo,
       environment: name,
@@ -85,7 +85,8 @@ export class GitHubDeploymentManager {
       }
     }).then(resp => {
       if (resp.status === 200 && resp.data) {
-        return resp.data.map(extractDeployment);
+        //@ts-ignore
+        return Promise.all(resp.data.map((data) => generateDemoDeployment(data, this)));
       }
       return undefined;
     });
@@ -143,7 +144,7 @@ export class GitHubDeploymentManager {
       if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
         throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
       }
-      return this.extractDemoDeployment(resp.data);
+      return generateDemoDeployment(resp.data, this);
     });
   }
 
@@ -163,7 +164,11 @@ export class GitHubDeploymentManager {
         'X-GitHub-Api-Version': '2022-11-28'
       },
     }).then(result => {
-      return this.extractDemoDeployment(result.data);
+      if (result.status === 201) {
+        return generateDemoDeployment(result.data, this);
+      } else {
+        throw new Error(`Invalid status response ${result.status} when creating deployment`);
+      }
     });
   }
 
@@ -280,40 +285,26 @@ export class GitHubDeploymentManager {
     });
   }
 
-  private extractDemoDeploymentsFromResponse(resp: any): DemoDeployment[] | undefined {
+  private async extractDemoDeploymentsFromResponse(resp: any[]): Promise<DemoDeployment[] | undefined> {
+    const manager = this;
+
     if (resp && resp.length > 0) {
-      const results: DemoDeployment[] = [];
-      resp.forEach((demo: {[key: string]: string}) => {
-        results.push(this.extractDemoDeployment(demo));
-      });
+      const results = await Promise.all(resp.map((data) => {return generateDemoDeployment(data, manager)}));
       return results;
     }
     return undefined;
   }
-
-  private extractDemoDeployment(deployment: { [key: string]: any }): DemoDeployment {
-    return new DemoDeployment(extractDeployment(deployment), this);
-  }
 }
 
-
-function extractDeployment(deployment: { [key: string]: any }): GitHubDeployment {
-  // @ts-ignore
-  const result: GitHubDeployment = {};
-  ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'environment'].forEach(key => {
-    result[key] = deployment[key];
-  });
-
-  if (deployment.payload) {
-    if (typeof deployment.payload === 'string' || deployment.payload instanceof String) {
-      //@ts-ignore
-      result.payload = JSON.parse(deployment.payload);
-    } else {
-      result.payload = deployment.payload;
-    }
-  }
-
-  return result;
+async function generateDemoDeployment(deployment: GitHubDeploymentData, manager: GitHubDeploymentManager): Promise<DemoDeployment> {
+  //TODO could use Vine definition here to validate the payload
+  try {
+    const payload = await GitHubDeploymentValidator.validate(deployment);
+    return new DemoDeployment(payload, manager);
+  } catch (err: any) {
+    //TODO need to extract the parsing error from VineJS
+    throw err;
+  };
 }
 
 function createDeploymentStatus(status: { [key: string]: any }): DeploymentStatus {
