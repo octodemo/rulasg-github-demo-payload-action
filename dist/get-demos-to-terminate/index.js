@@ -38124,6 +38124,10 @@ function getTags(inputName) {
 function getRequiredInput(name) {
     return lib_core.getInput(name, { required: true });
 }
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
 async function repositoryExists(octokit, repo) {
     try {
         await octokit.rest.repos.get(repo);
@@ -39023,9 +39027,9 @@ async function exec() {
     const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
     const toTerminate = await demoReview.getDemosToTerminate(gracePeriod);
     reportTerminations(toTerminate);
-    setOutput('terminations', toTerminate);
+    get_demos_to_terminate_setOutput('terminations', toTerminate);
 }
-function setOutput(name, reviews) {
+function get_demos_to_terminate_setOutput(name, reviews) {
     setOutputValue(`${name}_count`, reviews ? reviews.length : 0);
     if (reviews && reviews.length > 0) {
         const payload = reviews.map(review => {

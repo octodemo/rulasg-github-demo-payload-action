@@ -38124,6 +38124,10 @@ function getTags(inputName) {
 function getRequiredInput(name) {
     return lib_core.getInput(name, { required: true });
 }
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
 async function repositoryExists(octokit, repo) {
     try {
         await octokit.rest.repos.get(repo);
@@ -39028,15 +39032,15 @@ async function exec() {
     reportWarnings(analysis.to_warn);
     reportTerminations(analysis.to_terminate);
     lib_core.startGroup('outputs');
-    setOutput('deployments_to_warn', analysis.to_warn);
-    setOutput('deployments_to_terminate', analysis.to_terminate);
+    review_demo_deployments_setOutput('deployments_to_warn', analysis.to_warn);
+    review_demo_deployments_setOutput('deployments_to_terminate', analysis.to_terminate);
     lib_core.endGroup();
 }
 function setOutputValue(name, value) {
     lib_core.info(`${name}=${value}`);
     lib_core.setOutput(name, value);
 }
-function setOutput(name, reviews) {
+function review_demo_deployments_setOutput(name, reviews) {
     setOutputValue(`${name}_count`, reviews ? reviews.length : 0);
     if (reviews && reviews.length > 0) {
         const payload = reviews.map(review => {

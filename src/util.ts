@@ -73,6 +73,11 @@ export function getRequiredInput(name: string) {
   return core.getInput(name, {required: true});
 }
 
+export function setOutput(name: string, value: any) {
+  core.info(`  ${name}: ${value}`);
+  core.setOutput(name, value);
+}
+
 export async function repositoryExists(octokit: Octokit, repo: Repository): Promise<boolean> {
   try {
     await octokit.rest.repos.get(repo);

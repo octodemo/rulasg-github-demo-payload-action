@@ -33081,6 +33081,10 @@ function getTags(inputName) {
 function getRequiredInput(name) {
     return lib_core.getInput(name, { required: true });
 }
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
 async function repositoryExists(octokit, repo) {
     try {
         await octokit.rest.repos.get(repo);

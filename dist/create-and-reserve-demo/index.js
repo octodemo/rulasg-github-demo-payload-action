@@ -33021,7 +33021,7 @@ var __webpack_exports__ = {};
 (() => {
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(2186);
+var lib_core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: external "util"
@@ -38090,7 +38090,7 @@ function getGitHubToken() {
     // fallback option
     let token = process.env['GITHUB_TOKEN'];
     if (!token) {
-        token = core.getInput('github_token');
+        token = lib_core.getInput('github_token');
         if (!token) {
             throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
         }
@@ -38106,7 +38106,7 @@ function getRepository() {
     };
 }
 function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
+    const raw = lib_core.getInput(inputName), result = {};
     if (raw) {
         const tags = raw.split(',');
         tags.forEach((tag) => {
@@ -38122,7 +38122,11 @@ function getTags(inputName) {
     return result;
 }
 function getRequiredInput(name) {
-    return core.getInput(name, { required: true });
+    return lib_core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
 }
 async function repositoryExists(octokit, repo) {
     try {
@@ -38481,7 +38485,7 @@ class DemoPayload {
     setActionsOutputs() {
         const outputs = this.getActionsOutputs();
         Object.keys(outputs).forEach(key => {
-            core.setOutput(key, outputs[key]);
+            lib_core.setOutput(key, outputs[key]);
         });
     }
 }
@@ -38919,8 +38923,8 @@ async function run() {
         await exec();
     }
     catch (err) {
-        core.debug((0,external_util_.inspect)(err));
-        core.setFailed(err);
+        lib_core.debug((0,external_util_.inspect)(err));
+        lib_core.setFailed(err);
     }
 }
 run();
@@ -38931,7 +38935,7 @@ async function exec() {
         template = getDemoTemplateDefinition(parsed);
     }
     catch (err) {
-        core.setFailed(err);
+        lib_core.setFailed(err);
         return;
     }
     const inputs = {
@@ -38939,22 +38943,22 @@ async function exec() {
         target: {
             owner: getRequiredInput('repository_owner'),
         },
-        user: core.getInput('user'),
-        issue: core.getInput('issue_number'),
-        uuid: core.getInput('uuid'),
+        user: lib_core.getInput('user'),
+        issue: lib_core.getInput('issue_number'),
+        uuid: lib_core.getInput('uuid'),
         tags: getTags('tags'),
-        github_template_token: core.getInput('github_template_token'),
+        github_template_token: lib_core.getInput('github_template_token'),
         github_token: getRequiredInput('github_token'),
     };
     let demoConfig = undefined;
     try {
-        let config = core.getInput('demo_config_data');
+        let config = lib_core.getInput('demo_config_data');
         if (config && config.trim().length > 0) {
             demoConfig = config ? JSON.parse(config) : undefined;
         }
     }
     catch (err) {
-        core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
+        lib_core.warning(`Demo configuration provided, but could not be parsed as JSON, ${err.message}`);
         demoConfig = undefined;
     }
     const octokit = getOctokit(inputs.github_token);
@@ -38963,28 +38967,28 @@ async function exec() {
     // Before we do anything check to see if the UUID of the deployment already exists and if so fail
     // we expect that deployments will nto be recycled instead spending a time going through the lifecycle
     // before ultimately being deleted once the lifecycle has completed.
-    core.info(`Checking for existing demo deployment for UUID: ${inputs.uuid}...`);
+    lib_core.info(`Checking for existing demo deployment for UUID: ${inputs.uuid}...`);
     const existing = await deploymentManager.getDemoDeploymentForUUID(inputs.uuid);
     if (existing) {
-        core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
+        lib_core.setFailed(`A demo deployment already exists for the UUID ${inputs.uuid}`);
         //TODO might need to provide additional error details on the existing deployment
         return;
     }
     try {
-        core.info(`Validating template reference...`);
+        lib_core.info(`Validating template reference...`);
         const templateValid = await inputs.template.isValid(templateOctokit);
         if (!templateValid) {
-            core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
+            lib_core.setFailed(`Demo template is not valid, ${inputs.template.name}`);
             return;
         }
     }
     catch (err) {
-        core.setFailed(`Failure validating template: ${err.message}`);
+        lib_core.setFailed(`Failure validating template: ${err.message}`);
         return;
     }
     const potentialNames = loadNames(getRequiredInput('potential_repository_names'));
     const potentialNamesCount = potentialNames.length;
-    core.startGroup(`Finding a valid repository for the demo deployment`);
+    lib_core.startGroup(`Finding a valid repository for the demo deployment`);
     let demoDeployment = undefined;
     let payload = undefined;
     let nameIndex = 0;
@@ -38994,10 +38998,10 @@ async function exec() {
             owner: inputs.target.owner,
             repo: potentialRepositoryName
         };
-        core.info(`checking repository exists '${repo.owner}/${repo.repo}'`);
+        lib_core.info(`checking repository exists '${repo.owner}/${repo.repo}'`);
         const exists = await repositoryExists(octokit, repo);
         if (exists) {
-            core.info(`  already exists, skipping...`);
+            lib_core.info(`  already exists, skipping...`);
         }
         else {
             // Now check and verify if there is an existing deployment object sitting in place for this repoisitory, as we might have another process running in parallel creating one
@@ -39005,7 +39009,7 @@ async function exec() {
             // There could be a secondary workflow executing a destruction workflow at the same time, we need to rely on concurrency in this case inside the composing workflows.
             const existingDeployment = await deploymentManager.getDemoDeployment(`${inputs.target.owner}/${potentialRepositoryName}`);
             if (existingDeployment) {
-                core.info(`  repository does not exist, but an existing deployment was found, skipping...`);
+                lib_core.info(`  repository does not exist, but an existing deployment was found, skipping...`);
             }
             else {
                 const targetRepo = {
@@ -39024,42 +39028,42 @@ async function exec() {
                 };
                 // payload = new DemoPayload(targetRepo, inputs.template, inputs.user, inputs.issue, demoConfig, inputs.tags);
                 payload = new DemoPayload(demoDefinition);
-                core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
+                lib_core.info(`  unreserved repository found ${targetRepo.owner}/${targetRepo.repo}`);
                 const validation = await payload.validate(octokit, templateOctokit);
                 if (validation.templateExists && !validation.targetRepositoryExists) {
                     // Provide the outputs to the workflow
                     payload.setActionsOutputs();
                     demoDeployment = await deploymentManager.createDemoDeployment(payload);
-                    core.info(`  reserved repository`);
+                    lib_core.info(`  reserved repository`);
                 }
                 else {
-                    core.info(`  failed validation (${JSON.stringify(validation)}), skipping`);
+                    lib_core.info(`  failed validation (${JSON.stringify(validation)}), skipping`);
                 }
             }
         }
         // Increment the name index to try another one
         nameIndex++;
     } while (demoDeployment === undefined && nameIndex < potentialNamesCount);
-    core.endGroup();
+    lib_core.endGroup();
     if (!demoDeployment) {
-        core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
+        lib_core.setFailed(`Could not create a deployment using the provided repository names for the organization '${inputs.target.owner}': ${JSON.stringify(potentialNames)}'`);
     }
     else {
-        core.setOutput('demo_deployment_id', demoDeployment.id);
-        core.setOutput('demo_deployment_name', demoDeployment.name);
-        core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
+        lib_core.setOutput('demo_deployment_id', demoDeployment.id);
+        lib_core.setOutput('demo_deployment_name', demoDeployment.name);
+        lib_core.setOutput('demo_deployment_uuid', demoDeployment.uuid);
         // Show the demo deployment in progress
         await deploymentManager.updateDeploymentStatus(demoDeployment.id, 'in_progress', DEMO_STATES.provisioning);
-        core.startGroup('Demo Deployment');
-        core.info(`id = ${demoDeployment.id}`);
-        core.endGroup();
+        lib_core.startGroup('Demo Deployment');
+        lib_core.info(`id = ${demoDeployment.id}`);
+        lib_core.endGroup();
         if (payload) {
-            core.startGroup('Action outputs');
-            core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
-            core.endGroup();
-            core.startGroup('Terraform variables');
-            core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
-            core.endGroup();
+            lib_core.startGroup('Action outputs');
+            lib_core.info(JSON.stringify(payload.getActionsOutputs(), null, 2));
+            lib_core.endGroup();
+            lib_core.startGroup('Terraform variables');
+            lib_core.info(JSON.stringify(payload.getTerraformVariables(), null, 2));
+            lib_core.endGroup();
         }
     }
 }

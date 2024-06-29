@@ -38124,6 +38124,10 @@ function getTags(inputName) {
 function getRequiredInput(name) {
     return lib_core.getInput(name, { required: true });
 }
+function setOutput(name, value) {
+    lib_core.info(`  ${name}: ${value}`);
+    lib_core.setOutput(name, value);
+}
 async function repositoryExists(octokit, repo) {
     try {
         await octokit.rest.repos.get(repo);
@@ -38925,21 +38929,22 @@ async function exec() {
     const octokit = getOctokit();
     const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     const demoDeployment = await deploymentManager.getDemoDeploymentById(Number.parseInt(deploymentId));
-    lib_core.setOutput('demo_deployment_id', demoDeployment.id);
-    lib_core.setOutput('demo_deployment_name', demoDeployment.name);
-    lib_core.setOutput('demo_deployment_description', demoDeployment.description);
+    lib_core.startGroup('Demo Deployment');
+    setOutput('demo_deployment_id', demoDeployment.id);
+    setOutput('demo_deployment_name', demoDeployment.name);
+    setOutput('demo_deployment_description', demoDeployment.description);
     const uuid = demoDeployment.uuid;
     if (uuid) {
-        lib_core.setOutput('demo_deployment_uuid', uuid);
+        setOutput('demo_deployment_uuid', uuid);
     }
     const trackingIssue = demoDeployment.getTrackingIssue();
     if (trackingIssue) {
-        lib_core.setOutput('communication_issue_number', trackingIssue);
+        setOutput('communication_issue_number', trackingIssue);
     }
     const demoPayload = demoDeployment.payload;
     if (demoPayload) {
-        lib_core.startGroup('Demo Deployment Payload');
-        lib_core.setOutput('demo_deployment_payload', JSON.stringify(demoPayload));
+        setOutput('demo_deployment_payload', JSON.stringify(demoPayload));
+        //TODO split these out
         //TODO finish this off
         //const payload = demoDeployment.payload;
         //core.startGroup('Demo Deployment')
@@ -38950,8 +38955,8 @@ async function exec() {
         //core.endGroup();
         //core.startGroup('Terraform variables');
         //core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
-        lib_core.endGroup();
     }
+    lib_core.endGroup();
 }
 //# sourceMappingURL=get-demo-definition.js.map
 })();
