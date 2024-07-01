@@ -1,6 +1,6 @@
 
 import { describe, expect, it } from 'vitest';
-import { getDemoSchemaFromJson } from './TypeValidations';
+import { getDemoSchemaFromJsonString } from './TypeValidations';
 
 describe('DemoPayload', () => {
 
@@ -25,7 +25,7 @@ describe('DemoPayload', () => {
         }
       };
 
-      const result = await getDemoSchemaFromJson(JSON.stringify(payload));
+      const result = await getDemoSchemaFromJsonString(JSON.stringify(payload));
       expect(result).toBeDefined();
       expect(result.version).toBe(1);
       expect(result).toEqual(payload);
@@ -50,7 +50,7 @@ describe('DemoPayload', () => {
         }
       };
 
-      const result = await getDemoSchemaFromJson(JSON.stringify(payload));
+      const result = await getDemoSchemaFromJsonString(JSON.stringify(payload));
       expect(result).toBeDefined();
       expect(result.version).toBe(1);
       expect(result).toEqual(payload);

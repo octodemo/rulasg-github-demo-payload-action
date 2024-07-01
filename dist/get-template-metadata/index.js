@@ -33840,46 +33840,32 @@ async function validate(schema, data) {
 ;// CONCATENATED MODULE: ./lib/demo-metadata/DemoMetadata.js
 
 
+const SCRIPTS_SCHEMA = vine_default.object({
+    pre: vine_default.string().optional(),
+    post: vine_default.string().optional(),
+    finalize: vine_default.string().optional(),
+    secrets: vine_default.array(vine_default.string()).optional(),
+});
 const TERRAFORM_SCHEMA = vine_default.object({
     stack_path: vine_default.string(),
     lifecycle_scripts: vine_default.object({
-        create: vine_default.object({
-            pre: vine_default.string().optional(),
-            post: vine_default.string().optional(),
-            finalize: vine_default.string().optional(),
-            secrets: vine_default.array(vine_default.string()).optional(),
-        }).optional(),
-        destroy: vine_default.object({
-            pre: vine_default.string().optional(),
-            post: vine_default.string().optional(),
-            finalize: vine_default.string().optional(),
-            secrets: vine_default.array(vine_default.string()).optional(),
-        }).optional(),
+        create: SCRIPTS_SCHEMA.clone().optional(),
+        destroy: SCRIPTS_SCHEMA.clone().optional(),
     }).optional(),
 });
 const SCRIPT_SCHEMA = vine_default.object({
-    create: vine_default.object({
-        pre: vine_default.string().optional(),
-        post: vine_default.string().optional(),
-        finalize: vine_default.string().optional(),
-        secrets: vine_default.array(vine_default.string()).optional(),
-    }).optional(),
-    destroy: vine_default.object({
-        pre: vine_default.string().optional(),
-        post: vine_default.string().optional(),
-        finalize: vine_default.string().optional(),
-        secrets: vine_default.array(vine_default.string()).optional(),
-    }).optional(),
+    create: SCRIPTS_SCHEMA.clone().optional(),
+    destroy: SCRIPTS_SCHEMA.clone().optional(),
 });
 const FRAMEWORK_V1_SCHEMA_GROUP = vine_default.group([
     vine_default.group["if"]((data) => {
-        return data.version === 1 && data.variant === 'terraform';
+        return data.variant === 'terraform';
     }, {
         variant: vine_default.literal('terraform'),
         terraform: TERRAFORM_SCHEMA,
     }),
     vine_default.group["if"]((data) => {
-        return data.version === 1 && data.variant === 'script';
+        return data.variant === 'script';
     }, {
         variant: vine_default.literal('script'),
         script: SCRIPT_SCHEMA,
@@ -33889,10 +33875,14 @@ const FRAMEWORK_V1_SCHEMA_GROUP = vine_default.group([
 });
 const FRAMEWORK_V1_SCHEMA = vine_default.object({
     name: vine_default.string(),
-    version: vine_default.number().withoutDecimals().positive(),
+    version: vine_default.number().withoutDecimals().positive().in([1]),
+    lifecycle: vine_default.object({
+        warning: vine_default.number().withoutDecimals().positive().optional(),
+        terminate: vine_default.number().withoutDecimals().positive().optional(),
+    }).optional(),
     resources: vine_default.array(vine_default.string()),
-    variant: vine_default.string().in(['terraform', 'script']),
-}).merge(FRAMEWORK_V1_SCHEMA_GROUP);
+    framework: vine_default.object({}).merge(FRAMEWORK_V1_SCHEMA_GROUP),
+});
 async function parseDemoMetadata(data) {
     const parsed = await validate(FRAMEWORK_V1_SCHEMA, data);
     return new DemoMetadata(parsed);
@@ -33909,13 +33899,16 @@ class DemoMetadata {
         return this.data.version;
     }
     get variant() {
-        return this.data.variant;
+        return this.data.framework.variant;
     }
     get resources() {
         return this.data.resources;
     }
+    get framework() {
+        return this.data.framework;
+    }
     get terraformMetadata() {
-        return this.data.variant === 'terraform' ? this.data.terraform : undefined;
+        return this.framework.variant === 'terraform' ? this.framework.terraform : undefined;
     }
 }
 //# sourceMappingURL=DemoMetadata.js.map

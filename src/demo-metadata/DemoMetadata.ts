@@ -2,46 +2,32 @@ import vine from "@vinejs/vine";
 import { Infer } from '@vinejs/vine/types';
 import { validate } from '../validation-utils.js';
 
+
+const SCRIPTS_SCHEMA = vine.object({
+  pre: vine.string().optional(),
+  post: vine.string().optional(),
+  finalize: vine.string().optional(),
+  secrets: vine.array(vine.string()).optional(),
+});
+
 const TERRAFORM_SCHEMA = vine.object({
   stack_path: vine.string(),
 
   lifecycle_scripts: vine.object({
-    create: vine.object({
-      pre: vine.string().optional(),
-      post: vine.string().optional(),
-      finalize: vine.string().optional(),
-      secrets: vine.array(vine.string()).optional(),
-    }).optional(),
-
-    destroy: vine.object({
-      pre: vine.string().optional(),
-      post: vine.string().optional(),
-      finalize: vine.string().optional(),
-      secrets: vine.array(vine.string()).optional(),
-    }).optional(),
+    create: SCRIPTS_SCHEMA.clone().optional(),
+    destroy: SCRIPTS_SCHEMA.clone().optional(),
   }).optional(),
 });
 
 const SCRIPT_SCHEMA = vine.object({
-  create: vine.object({
-    pre: vine.string().optional(),
-    post: vine.string().optional(),
-    finalize: vine.string().optional(),
-    secrets: vine.array(vine.string()).optional(),
-  }).optional(),
-
-  destroy: vine.object({
-    pre: vine.string().optional(),
-    post: vine.string().optional(),
-    finalize: vine.string().optional(),
-    secrets: vine.array(vine.string()).optional(),
-  }).optional(),
+  create: SCRIPTS_SCHEMA.clone().optional(),
+  destroy: SCRIPTS_SCHEMA.clone().optional(),
 });
 
 const FRAMEWORK_V1_SCHEMA_GROUP = vine.group([
   vine.group.if(
     (data) => {
-      return data.version === 1 && data.variant === 'terraform';
+      return data.variant === 'terraform';
     },
     {
       variant: vine.literal('terraform'),
@@ -50,7 +36,7 @@ const FRAMEWORK_V1_SCHEMA_GROUP = vine.group([
   ),
   vine.group.if(
     (data) => {
-      return data.version === 1 && data.variant === 'script';
+      return data.variant === 'script';
     },
     {
       variant: vine.literal('script'),
@@ -63,10 +49,14 @@ const FRAMEWORK_V1_SCHEMA_GROUP = vine.group([
 
 const FRAMEWORK_V1_SCHEMA = vine.object({
   name: vine.string(),
-  version: vine.number().withoutDecimals().positive(),
+  version: vine.number().withoutDecimals().positive().in([1]),
+  lifecycle: vine.object({
+    warning: vine.number().withoutDecimals().positive().optional(),
+    terminate: vine.number().withoutDecimals().positive().optional(),
+  }).optional(),
   resources: vine.array(vine.string()),
-  variant: vine.string().in(['terraform', 'script']),
-}).merge(FRAMEWORK_V1_SCHEMA_GROUP);
+  framework: vine.object({}).merge(FRAMEWORK_V1_SCHEMA_GROUP),
+});
 
 
 export type FrameworkV1 = Infer<typeof FRAMEWORK_V1_SCHEMA>;
@@ -95,14 +85,18 @@ export class DemoMetadata {
   }
 
   get variant(): string {
-    return this.data.variant;
+    return this.data.framework.variant;
   }
 
   get resources(): string[] {
     return this.data.resources;
   }
 
+  get framework(): Infer<typeof FRAMEWORK_V1_SCHEMA_GROUP> {
+    return this.data.framework;
+  }
+
   get terraformMetadata(): TerraformMetadata | undefined {
-    return this.data.variant === 'terraform' ? this.data.terraform : undefined;
+    return this.framework.variant === 'terraform' ? this.framework.terraform : undefined;
   }
 }
