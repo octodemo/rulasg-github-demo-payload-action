@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as fs from 'fs';
 import { inspect } from 'util';
 import { DemoMetadata, parseDemoMetadata } from '../demo-metadata/DemoMetadata.js';
-import { setOutput } from '../util.js';
+import { setOutput } from '../action-utils.js';
 
 async function run() {
   try {

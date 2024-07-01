@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import { inspect } from 'util';
-import { filterObjectKeys, getRequiredInput } from '../util.js';
+import { filterObjectKeys } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 import vine, { errors } from '@vinejs/vine';
 import { DemoTemplateDefinition } from '../demo-payload/TypeValidations.js';
 

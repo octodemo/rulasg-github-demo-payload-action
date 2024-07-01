@@ -2,7 +2,8 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
-import { getOctokit, getRequiredInput } from '../util.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {

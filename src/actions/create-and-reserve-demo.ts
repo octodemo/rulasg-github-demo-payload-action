@@ -7,7 +7,8 @@ import { DEMO_STATES } from '../constants.js';
 import { DemoPayload } from '../demo-payload/DemoPayload.js';
 import { DemoTemplateDefinitionObject, getDemoTemplateDefinition } from '../demo-payload/DemoTemplateDefinitionObject.js';
 import { DemoSchema, getDemoTemplateDefinitionFromJsonString } from '../demo-payload/TypeValidations.js';
-import { getOctokit, getRequiredInput, getTags, repositoryExists } from '../util.js';
+import { getOctokit, repositoryExists } from '../util.js';
+import { getRequiredInput, getTags } from '../action-utils.js';
 
 async function run() {
   try {

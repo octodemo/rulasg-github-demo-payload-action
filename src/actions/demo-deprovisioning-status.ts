@@ -5,7 +5,8 @@ import { DEMO_STATES } from '../constants.js';
 import { DemoDeployment } from '../DemoDeployment.js';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
 import { DeploymentState } from '../types.js';
-import { getOctokit, getRequiredInput } from '../util.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {

@@ -33026,6 +33026,102 @@ var lib_core = __nccwpck_require__(2186);
 var external_util_ = __nccwpck_require__(3837);
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var lib_github = __nccwpck_require__(5438);
+;// CONCATENATED MODULE: ./lib/util.js
+
+function getGitHubToken() {
+    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
+    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
+    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
+    // fallback option
+    let token = process.env['GITHUB_TOKEN'];
+    if (!token) {
+        //TODO force all actions to explicitly inject this token
+        //   token = core.getInput('github_token');
+        if (!token) {
+            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
+        }
+    }
+    return token;
+}
+function getOctokit(token) {
+    let octokitToken;
+    if (!token || token.trim().length === 0) {
+        octokitToken = getGitHubToken();
+    }
+    else {
+        octokitToken = token;
+    }
+    //@ts-ignore
+    return github.getOctokit(octokitToken);
+}
+function getRepository() {
+    let repoOwner = process.env['GITHUB_REPO_OWNER'];
+    let repoName = process.env['GITHUB_REPO_NAME'];
+    return {
+        owner: repoOwner || 'peter-murray',
+        repo: repoName || 'github-demo-payload-action',
+    };
+}
+async function repositoryExists(octokit, repo) {
+    try {
+        await octokit.rest.repos.get(repo);
+        return true;
+    }
+    catch (err) {
+        if (err.status === 404) {
+            return false;
+        }
+        throw new Error(`Failed to resolve repository ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
+    }
+}
+async function repositoryBranchExists(octokit, repo, ref) {
+    try {
+        await octokit.rest.repos.getBranch({ ...repo, branch: ref });
+        return true;
+    }
+    catch (err) {
+        if (err.status === 404) {
+            return false;
+        }
+        throw new Error(`Failed to resolve repository ref(${ref}) on ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
+    }
+}
+function filterObjectKeys(originalObject, keysToRemove) {
+    const filteredObject = {};
+    Object.keys(originalObject).forEach(key => {
+        if (!keysToRemove.includes(key)) {
+            filteredObject[key] = originalObject[key];
+        }
+    });
+    return filteredObject;
+}
+//# sourceMappingURL=util.js.map
+;// CONCATENATED MODULE: ./lib/action-utils.js
+
+function getRequiredInput(name) {
+    return lib_core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -38038,8 +38134,8 @@ var Vine = class extends SchemaBuilder {
 };
 
 // index.ts
-var chunk_46WINKKP_vine = new Vine();
-var vine_default = chunk_46WINKKP_vine;
+var vine = new Vine();
+var vine_default = vine;
 
 
 //# sourceMappingURL=chunk-46WINKKP.js.map
@@ -38050,117 +38146,8 @@ var vine_default = chunk_46WINKKP_vine;
 
 
 //# sourceMappingURL=index.js.map
-;// CONCATENATED MODULE: ./lib/util.js
-
-
-
-function getOctokit(token) {
-    let octokitToken;
-    if (!token || token.trim().length === 0) {
-        octokitToken = getGitHubToken();
-    }
-    else {
-        octokitToken = token;
-    }
-    //@ts-ignore
-    return github.getOctokit(octokitToken);
-}
-function getGitHubToken() {
-    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
-    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
-    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
-    // fallback option
-    let token = process.env['GITHUB_TOKEN'];
-    if (!token) {
-        token = core.getInput('github_token');
-        if (!token) {
-            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
-        }
-    }
-    return token;
-}
-function getRepository() {
-    let repoOwner = process.env['GITHUB_REPO_OWNER'];
-    let repoName = process.env['GITHUB_REPO_NAME'];
-    return {
-        owner: repoOwner || 'peter-murray',
-        repo: repoName || 'github-demo-payload-action',
-    };
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-function getRequiredInput(name) {
-    return lib_core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    core.info(`  ${name}: ${value}`);
-    core.setOutput(name, value);
-}
-async function repositoryExists(octokit, repo) {
-    try {
-        await octokit.rest.repos.get(repo);
-        return true;
-    }
-    catch (err) {
-        if (err.status === 404) {
-            return false;
-        }
-        throw new Error(`Failed to resolve repository ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
-    }
-}
-async function repositoryBranchExists(octokit, repo, ref) {
-    try {
-        await octokit.rest.repos.getBranch({ ...repo, branch: ref });
-        return true;
-    }
-    catch (err) {
-        if (err.status === 404) {
-            return false;
-        }
-        throw new Error(`Failed to resolve repository ref(${ref}) on ${repo.owner}/${repo.repo}, unexpected status: ${err.status}; ${err.message}`);
-    }
-}
-function filterObjectKeys(originalObject, keysToRemove) {
-    const filteredObject = {};
-    Object.keys(originalObject).forEach(key => {
-        if (!keysToRemove.includes(key)) {
-            filteredObject[key] = originalObject[key];
-        }
-    });
-    return filteredObject;
-}
-async function validate(schema, data) {
-    try {
-        const validator = vine.compile(schema);
-        const result = await validator.validate(JSON.parse(data));
-        return result;
-    }
-    catch (err) {
-        if (err instanceof errors.E_VALIDATION_ERROR) {
-            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
-            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
-            throw new Error(`Validation of JSON payload failed: ${failures}.`);
-        }
-        // Rethrow the error
-        throw err;
-    }
-}
-//# sourceMappingURL=util.js.map
 ;// CONCATENATED MODULE: ./lib/actions/create-demo-template-definition.js
+
 
 
 

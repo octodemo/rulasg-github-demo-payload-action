@@ -1,6 +1,6 @@
 import vine from '@vinejs/vine';
 import { Infer } from '@vinejs/vine/types';
-import { validate } from 'src/util.js';
+import { validate } from '../validation-utils.js';
 
 export const TEMPLATE_OPTION_CONTAINER = 'container';
 

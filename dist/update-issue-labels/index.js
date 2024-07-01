@@ -31104,14 +31104,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 3611:
-/***/ ((module) => {
-
-module.exports = eval("require")("src/util.js");
-
-
-/***/ }),
-
 /***/ 9491:
 /***/ ((module) => {
 
@@ -38079,8 +38071,21 @@ const LIFECYCLE_STATES = {
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/util.js
 
-
-
+function getGitHubToken() {
+    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
+    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
+    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
+    // fallback option
+    let token = process.env['GITHUB_TOKEN'];
+    if (!token) {
+        //TODO force all actions to explicitly inject this token
+        //   token = core.getInput('github_token');
+        if (!token) {
+            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
+        }
+    }
+    return token;
+}
 function getOctokit(token) {
     let octokitToken;
     if (!token || token.trim().length === 0) {
@@ -38092,20 +38097,6 @@ function getOctokit(token) {
     //@ts-ignore
     return github.getOctokit(octokitToken);
 }
-function getGitHubToken() {
-    //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
-    // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
-    // it is also inverted logic to the inputs taking precidence over any environment varaibles which should be the last
-    // fallback option
-    let token = process.env['GITHUB_TOKEN'];
-    if (!token) {
-        token = lib_core.getInput('github_token');
-        if (!token) {
-            throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
-        }
-    }
-    return token;
-}
 function getRepository() {
     let repoOwner = process.env['GITHUB_REPO_OWNER'];
     let repoName = process.env['GITHUB_REPO_NAME'];
@@ -38113,29 +38104,6 @@ function getRepository() {
         owner: repoOwner || 'peter-murray',
         repo: repoName || 'github-demo-payload-action',
     };
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-function getRequiredInput(name) {
-    return lib_core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    core.info(`  ${name}: ${value}`);
-    core.setOutput(name, value);
 }
 async function repositoryExists(octokit, repo) {
     try {
@@ -38170,7 +38138,10 @@ function filterObjectKeys(originalObject, keysToRemove) {
     });
     return filteredObject;
 }
-async function util_validate(schema, data) {
+//# sourceMappingURL=util.js.map
+;// CONCATENATED MODULE: ./lib/validation-utils.js
+
+async function validation_utils_validate(schema, data) {
     try {
         const validator = vine.compile(schema);
         const result = await validator.validate(JSON.parse(data));
@@ -38186,9 +38157,7 @@ async function util_validate(schema, data) {
         throw err;
     }
 }
-//# sourceMappingURL=util.js.map
-// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/util.js
-var util = __nccwpck_require__(3611);
+//# sourceMappingURL=validation-utils.js.map
 ;// CONCATENATED MODULE: ./lib/demo-payload/TypeValidations.js
 
 
@@ -38911,7 +38880,34 @@ function createDeploymentStatus(status) {
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
+;// CONCATENATED MODULE: ./lib/action-utils.js
+
+function getRequiredInput(name) {
+    return lib_core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./lib/actions/update-issue-labels.js
+
 
 
 

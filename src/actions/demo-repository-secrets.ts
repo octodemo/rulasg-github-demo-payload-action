@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as path from 'path';
 import * as fs from 'fs';
 import {inspect} from 'util';
-import { getRequiredInput } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 type Secrets = {
   organization?: string[]

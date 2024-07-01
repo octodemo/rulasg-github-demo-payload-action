@@ -3,7 +3,8 @@ import * as github from '@actions/github';
 import { inspect } from 'util';
 import { DemoDeployment } from '../DemoDeployment.js';
 import { DemoDeploymentReview } from '../DemoDeploymentReview.js';
-import { getOctokit, getRequiredInput } from '../util.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
