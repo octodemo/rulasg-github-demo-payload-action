@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import * as fs from 'fs';
 import { inspect } from 'util';
-import { DemoMetadata, parseDemoMetadata } from '../demo-metadata/DemoMetadata.js';
 import { setOutput } from '../action-utils.js';
+import { DemoMetadata, parseDemoMetadata } from '../demo-metadata/DemoMetadata.js';
 
 async function run() {
   try {
@@ -21,9 +21,8 @@ async function exec() {
   let metadata: DemoMetadata;
   try {
     const fileContents = fs.readFileSync(templateMetadataPath, 'utf8');
-    core.info(`File contents: ${fileContents}`);
-    const json = JSON.parse(fileContents.toString());
-    metadata = await parseDemoMetadata(json);
+    core.debug(`Metadata file contents: ${fileContents}`);
+    metadata = await parseDemoMetadata(fileContents);
   } catch (err: any) {
     core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);
     throw err;

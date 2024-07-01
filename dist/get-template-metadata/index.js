@@ -28768,6 +28768,32 @@ var lib_core = __nccwpck_require__(2186);
 var external_fs_ = __nccwpck_require__(7147);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
+;// CONCATENATED MODULE: ./lib/action-utils.js
+
+function getRequiredInput(name) {
+    return core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    lib_core.info(`  ${name}: ${value}`);
+    lib_core.setOutput(name, value);
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -33893,32 +33919,6 @@ class DemoMetadata {
     }
 }
 //# sourceMappingURL=DemoMetadata.js.map
-;// CONCATENATED MODULE: ./lib/action-utils.js
-
-function getRequiredInput(name) {
-    return core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    lib_core.info(`  ${name}: ${value}`);
-    lib_core.setOutput(name, value);
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./lib/actions/get-template-metadata.js
 
 
@@ -33940,9 +33940,8 @@ async function exec() {
     let metadata;
     try {
         const fileContents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
-        lib_core.info(`File contents: ${fileContents}`);
-        const json = JSON.parse(fileContents.toString());
-        metadata = await parseDemoMetadata(json);
+        lib_core.debug(`Metadata file contents: ${fileContents}`);
+        metadata = await parseDemoMetadata(fileContents);
     }
     catch (err) {
         lib_core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);

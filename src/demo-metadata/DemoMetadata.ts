@@ -73,7 +73,7 @@ export type FrameworkV1 = Infer<typeof FRAMEWORK_V1_SCHEMA>;
 
 export type TerraformMetadata = Infer<typeof TERRAFORM_SCHEMA>;
 
-export async function parseDemoMetadata(data: any): Promise<DemoMetadata> {
+export async function parseDemoMetadata(data: string): Promise<DemoMetadata> {
   const parsed: FrameworkV1 = await validate<typeof FRAMEWORK_V1_SCHEMA>(FRAMEWORK_V1_SCHEMA, data);
   return new DemoMetadata(parsed);
 }
