@@ -20,8 +20,9 @@ async function exec() {
 
   let metadata: DemoMetadata;
   try {
-    const fileConents = fs.readFileSync(templateMetadataPath, 'utf8');
-    const json = JSON.parse(fileConents);
+    const fileContents = fs.readFileSync(templateMetadataPath, 'utf8');
+    core.info(`File contents: ${fileContents}`);
+    const json = JSON.parse(fileContents.toString());
     metadata = await parseDemoMetadata(json);
   } catch (err: any) {
     core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);

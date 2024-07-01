@@ -33939,8 +33939,9 @@ async function exec() {
     const templateMetadataPath = lib_core.getInput('template_metadata_file');
     let metadata;
     try {
-        const fileConents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
-        const json = JSON.parse(fileConents);
+        const fileContents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
+        lib_core.info(`File contents: ${fileContents}`);
+        const json = JSON.parse(fileContents.toString());
         metadata = await parseDemoMetadata(json);
     }
     catch (err) {
