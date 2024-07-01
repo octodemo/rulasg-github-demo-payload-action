@@ -1,0 +1,12 @@
+name: get-template-metadata
+description: Parses the template metadata for a template
+author: Peter Murray
+
+inputs:
+  template_metadata:
+    description: The path to the template metadata file
+    required: true
+
+runs:
+  using: node20
+  main: '../dist/get-template-metadata/index.js'

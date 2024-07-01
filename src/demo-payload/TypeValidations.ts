@@ -95,7 +95,7 @@ export async function getDemoTemplateDefinitionFromJsonString(data: string) {
   return await validate<typeof DEMO_TEMPLATE_DEFINITION>(DEMO_TEMPLATE_DEFINITION, data);
 }
 
-async function validate<T extends SchemaTypes>(schema: T, data: string): Promise<Infer<T>> {
+export async function validate<T extends SchemaTypes>(schema: T, data: string): Promise<Infer<T>> {
   try {
     const validator = vine.compile(schema);
     const result = await validator.validate(JSON.parse(data));

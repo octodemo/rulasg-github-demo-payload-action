@@ -158,7 +158,7 @@ export class GitHubDeploymentManager {
       required_contexts: [],
       environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
       payload: demo.asJsonString,
-      description: `uuid:${demo.uuid}`,
+      description: `${demo.uuid}`,
       transient_environment: true,
       headers: {
         'X-GitHub-Api-Version': '2022-11-28'

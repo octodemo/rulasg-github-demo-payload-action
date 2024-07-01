@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 
 export type Tags = {[key: string]: string};
 
+//TODO remove this with vineJS object
 export type Repository = {
   owner: string,
   repo: string,

@@ -31104,6 +31104,14 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 3390:
+/***/ ((module) => {
+
+module.exports = eval("require")("src/demo-payload/TypeValidations.js");
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -33022,29 +33030,10 @@ var __webpack_exports__ = {};
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var lib_core = __nccwpck_require__(2186);
-// EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
-var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
-;// CONCATENATED MODULE: ./lib/constants.js
-const DEMO_DEPLOYMENT_TASK = 'demo:deployment';
-const DEMO_STATES = {
-    provisioning: 'demo::provisioning',
-    provisioned: 'demo::provisioned',
-    destroying: 'demo::destroying',
-    destroyed: 'demo::destroyed',
-    error: 'demo::error',
-    marked_hold: 'demo::lifecycle_hold',
-    marked_warning: 'demo::lifecycle_warning',
-    marked_termination: 'demo::lifecycle_terminate',
-};
-const LIFECYCLE_STATES = {
-    hold: 'hold',
-    warning: 'warning',
-    termination: 'terminate',
-    unhold: 'unhold',
-};
-//# sourceMappingURL=constants.js.map
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(7147);
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -38057,8 +38046,8 @@ var Vine = class extends SchemaBuilder {
 };
 
 // index.ts
-var chunk_46WINKKP_vine = new Vine();
-var vine_default = chunk_46WINKKP_vine;
+var vine = new Vine();
+var vine_default = vine;
 
 
 //# sourceMappingURL=chunk-46WINKKP.js.map
@@ -38069,6 +38058,92 @@ var vine_default = chunk_46WINKKP_vine;
 
 
 //# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/demo-payload/TypeValidations.js
+var TypeValidations = __nccwpck_require__(3390);
+;// CONCATENATED MODULE: ./lib/demo-metadata/DemoMetadata.js
+
+
+const TERRAFORM_SCHEMA = vine_default.object({
+    stack_path: vine_default.string(),
+    lifecycle_scripts: vine_default.object({
+        create: vine_default.object({
+            pre: vine_default.string().optional(),
+            post: vine_default.string().optional(),
+            finalize: vine_default.string().optional(),
+            secrets: vine_default.array(vine_default.string()).optional(),
+        }).optional(),
+        destroy: vine_default.object({
+            pre: vine_default.string().optional(),
+            post: vine_default.string().optional(),
+            finalize: vine_default.string().optional(),
+            secrets: vine_default.array(vine_default.string()).optional(),
+        }).optional(),
+    }).optional(),
+});
+const SCRIPT_SCHEMA = vine_default.object({
+    create: vine_default.object({
+        pre: vine_default.string().optional(),
+        post: vine_default.string().optional(),
+        finalize: vine_default.string().optional(),
+        secrets: vine_default.array(vine_default.string()).optional(),
+    }).optional(),
+    destroy: vine_default.object({
+        pre: vine_default.string().optional(),
+        post: vine_default.string().optional(),
+        finalize: vine_default.string().optional(),
+        secrets: vine_default.array(vine_default.string()).optional(),
+    }).optional(),
+});
+const FRAMEWORK_V1_SCHEMA_GROUP = vine_default.group([
+    vine_default.group["if"]((data) => {
+        return data.version === 1 && data.variant === 'terraform';
+    }, {
+        variant: vine_default.literal('terraform'),
+        terraform: TERRAFORM_SCHEMA,
+    }),
+    vine_default.group["if"]((data) => {
+        return data.version === 1 && data.variant === 'script';
+    }, {
+        variant: vine_default.literal('script'),
+        script: SCRIPT_SCHEMA,
+    }),
+]).otherwise((data, field) => {
+    field.report('Framework variant and version combination is not supported', 'unsupported_variant', field);
+});
+const FRAMEWORK_V1_SCHEMA = vine_default.object({
+    name: vine_default.string(),
+    version: vine_default.number().withoutDecimals().positive(),
+    resources: vine_default.array(vine_default.string()),
+    variant: vine_default.string().in(['terraform', 'script']),
+}).merge(FRAMEWORK_V1_SCHEMA_GROUP);
+async function parseDemoMetadata(data) {
+    const parsed = await (0,TypeValidations.validate)(FRAMEWORK_V1_SCHEMA, data);
+    return new DemoMetadata(parsed);
+}
+class DemoMetadata {
+    data;
+    constructor(data) {
+        this.data = data;
+    }
+    get name() {
+        return this.data.name;
+    }
+    get version() {
+        return this.data.version;
+    }
+    get variant() {
+        return this.data.variant;
+    }
+    get resources() {
+        return this.data.resources;
+    }
+    get terraformMetadata() {
+        return this.data.variant === 'terraform' ? this.data.terraform : undefined;
+    }
+}
+//# sourceMappingURL=DemoMetadata.js.map
+// EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
+var lib_github = __nccwpck_require__(5438);
 ;// CONCATENATED MODULE: ./lib/util.js
 
 
@@ -38090,7 +38165,7 @@ function getGitHubToken() {
     // fallback option
     let token = process.env['GITHUB_TOKEN'];
     if (!token) {
-        token = lib_core.getInput('github_token');
+        token = core.getInput('github_token');
         if (!token) {
             throw new Error('GitHub Token was not set for environment variable "GITHUB_TOKEN" or provided via input "github_token"');
         }
@@ -38122,11 +38197,11 @@ function getTags(inputName) {
     return result;
 }
 function getRequiredInput(name) {
-    return lib_core.getInput(name, { required: true });
+    return core.getInput(name, { required: true });
 }
 function setOutput(name, value) {
-    core.info(`  ${name}: ${value}`);
-    core.setOutput(name, value);
+    lib_core.info(`  ${name}: ${value}`);
+    lib_core.setOutput(name, value);
 }
 async function repositoryExists(octokit, repo) {
     try {
@@ -38162,745 +38237,7 @@ function filterObjectKeys(originalObject, keysToRemove) {
     return filteredObject;
 }
 //# sourceMappingURL=util.js.map
-;// CONCATENATED MODULE: ./lib/demo-payload/TypeValidations.js
-
-const TEMPLATE_OPTION_CONTAINER = 'container';
-const TEMPLATE_OPTION_REPOSITORY = 'repository';
-const REPOSITORY_SCHEMA = vine_default.object({
-    owner: vine_default.string(),
-    repo: vine_default.string(),
-});
-const TEMPLATE_SCHEMA_REPOSITORY = vine_default.object({
-    ...REPOSITORY_SCHEMA.getProperties(),
-    ref: vine_default.string().optional(),
-});
-const TEMPLATE_SCHEMA_CONTAINER = vine_default.object({
-    owner: vine_default.string(),
-    name: vine_default.string(),
-    version: vine_default.string(),
-    container_registry: vine_default.string().optional()
-});
-const TEMPLATE_SCHEMA_GROUP = vine_default.group([
-    vine_default.group["if"]((data) => data.type === TEMPLATE_OPTION_REPOSITORY, {
-        type: vine_default.literal(TEMPLATE_OPTION_REPOSITORY),
-        template: vine_default.object(TEMPLATE_SCHEMA_REPOSITORY.getProperties())
-    }),
-    vine_default.group["if"]((data) => data.type === TEMPLATE_OPTION_CONTAINER, {
-        type: vine_default.literal(TEMPLATE_OPTION_CONTAINER),
-        template: vine_default.object(TEMPLATE_SCHEMA_CONTAINER.getProperties())
-    }),
-]).otherwise((data, field) => {
-    field.report('The template type is not valid', 'usupported_type', field);
-});
-const DEMO_TEMPLATE_DEFINITION = vine_default.object({}).merge(TEMPLATE_SCHEMA_GROUP);
-const DEMO_SCHEMA_VERSION_ONE = vine_default.group([
-    vine_default.group["if"](data => data.version === 1, {
-        version: vine_default.literal(1),
-        demo_definition: DEMO_TEMPLATE_DEFINITION,
-        communication_issue_number: vine_default.number().withoutDecimals().positive().optional(),
-        uuid: vine_default.string(),
-        requestor_handle: vine_default.string().optional(),
-        github_repository: REPOSITORY_SCHEMA,
-        resources: vine_default.object({
-            github: vine_default.object({}).allowUnknownProperties().optional(),
-            azure: vine_default.object({}).allowUnknownProperties().optional(),
-            aws: vine_default.object({}).allowUnknownProperties().optional(),
-            gcp: vine_default.object({}).allowUnknownProperties().optional(),
-            azure_devops: vine_default.object({}).allowUnknownProperties().optional(),
-        }).optional(),
-        demo_config: vine_default.object({}).allowUnknownProperties().optional(),
-    }),
-]).otherwise((data, field) => {
-    field.report(`Unsupported data version '${data.version}'`, 'unsupported_version', field);
-});
-const DEMO_PAYLOAD_SCHEMA = vine_default.object({
-    version: vine_default.number().withoutDecimals().min(1).positive(),
-}).merge(DEMO_SCHEMA_VERSION_ONE);
-async function getDemoSchemaFromJsonString(data) {
-    return validate(DEMO_PAYLOAD_SCHEMA, data);
-}
-async function getDemoTemplateDefinitionFromJsonString(data) {
-    return await validate(DEMO_TEMPLATE_DEFINITION, data);
-}
-async function validate(schema, data) {
-    try {
-        const validator = vine.compile(schema);
-        const result = await validator.validate(JSON.parse(data));
-        return result;
-    }
-    catch (err) {
-        if (err instanceof errors.E_VALIDATION_ERROR) {
-            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
-            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
-            throw new Error(`Validation of JSON payload failed: ${failures}.`);
-        }
-        // Rethrow the error
-        throw err;
-    }
-}
-//# sourceMappingURL=TypeValidations.js.map
-;// CONCATENATED MODULE: ./lib/demo-payload/DemoTemplateDefinitionObject.js
-
-
-function getDemoTemplateDefinition(data) {
-    if (data.type === TEMPLATE_OPTION_REPOSITORY) {
-        return new RepositoryDemoTemplateDefinition(data);
-    }
-    else if (data.type === TEMPLATE_OPTION_CONTAINER) {
-        return new ContainerDemoTemplateDefintion(data);
-    }
-    else {
-        throw new Error(`Unsupported template type: ${JSON.stringify(data)}`);
-    }
-}
-class DemoTemplateDefinitionObject {
-    data;
-    constructor(data) {
-        this.data = data;
-    }
-    get asJsonString() {
-        return JSON.stringify(this.data);
-    }
-    get definition() {
-        return this.data;
-    }
-}
-class RepositoryDemoTemplateDefinition extends DemoTemplateDefinitionObject {
-    constructor(data) {
-        if (data.type !== TEMPLATE_OPTION_REPOSITORY) {
-            throw new Error(`Invalid template type, '${data.type}', in provided template data, '${data}'.`);
-        }
-        super(data);
-    }
-    get template() {
-        //@ts-ignore
-        return this.data.template;
-    }
-    get repo() {
-        return {
-            owner: this.template.owner,
-            repo: this.template.repo
-        };
-    }
-    get ref() {
-        return this.template.ref || 'main';
-    }
-    get name() {
-        const repo = this.repo;
-        return `${repo.owner}/${repo.repo}:${this.ref}`;
-    }
-    async isValid(octokit) {
-        if (!octokit) {
-            throw new Error(`An octokit is required to test the validity of a repository template reference`);
-        }
-        const repoExists = await repositoryExists(octokit, this.repo);
-        if (repoExists) {
-            return await repositoryBranchExists(octokit, this.repo, this.ref);
-        }
-        return false;
-    }
-    // asJsonString(): string {
-    //   return JSON.stringify(this.data);
-    // }
-    getTerraformVariablesObject() {
-        return {
-            ...this.repo,
-            ref: this.ref
-        };
-    }
-    appendTemplateOutputValues(result) {
-        result['template_repository_full_name'] = `${this.repo.owner}/${this.repo.repo}`;
-        result['template_repository_owner'] = this.repo.owner;
-        result['template_repository_name'] = this.repo.repo;
-        result['template_repository_ref'] = this.ref || '';
-    }
-}
-class ContainerDemoTemplateDefintion extends DemoTemplateDefinitionObject {
-    constructor(data) {
-        if (data.type !== TEMPLATE_OPTION_CONTAINER) {
-            throw new Error(`Invalid template type, '${data.type}', in provided template data, '${data}'.`);
-        }
-        super(data);
-    }
-    get template() {
-        //@ts-ignore
-        return this.data.template;
-    }
-    get owner() {
-        return this.template.owner;
-    }
-    get containerName() {
-        return this.template.name;
-    }
-    get version() {
-        return this.template.version;
-    }
-    get containerRegistry() {
-        return this.template.container_registry || 'ghcr.io';
-    }
-    get name() {
-        return `${this.containerRegistry}/${this.owner}/${this.containerName}:${this.version}`;
-    }
-    getTerraformVariablesObject() {
-        throw new Error('Method not implemented.');
-    }
-    appendTemplateOutputValues(result) {
-        throw new Error('Method not implemented.');
-    }
-    // asJsonString(): string {
-    //   throw new Error('Method not implemented.');
-    // }
-    async isValid(octokit) {
-        //TODO need to implement this check to leverage the GitHub container registry APIs
-        return false;
-    }
-}
-//# sourceMappingURL=DemoTemplateDefinitionObject.js.map
-;// CONCATENATED MODULE: ./lib/demo-payload/DemoPayload.js
-
-
-// export function getDemoPayload(target: Repository, template: DemoTemplate, user?: string, issue?: string, demoConfig?: { [key: string]: any }, tags?: Tags) {
-//   return new DemoPayload(target, template, user, issue, demoConfig, tags);
-// }
-// export function getDemoPayloadFromJson(data: string) {
-//   try {
-//     const payload = JSON.parse(data);
-//     const target = {
-//       owner: payload?.github?.repository_owner,
-//       repo: payload?.github?.repository_name,
-//     };
-//     const template = getDemoTemplateFromJson(JSON.stringify(payload.template.data));
-//     const user = payload?.github?.actor;
-//     const issue = payload?.tracking_issue;
-//     const demoConfig = payload?.github_context?.demo_config;
-//     const tags = payload?.cloud_context?.tags;
-//     return new DemoPayload(target, template, user, issue, demoConfig, tags);
-//   } catch (err: any) {
-//     throw new Error(`The demo payload data was not valid, ${err.toString()}`);
-//   }
-// }
-class DemoPayload {
-    validation;
-    data;
-    constructor(data) {
-        this.data = data;
-    }
-    get demoTemplate() {
-        return getDemoTemplateDefinition(this.data.demo_definition);
-    }
-    async validate(octokit, templateOctokit) {
-        if (!this.validation) {
-            const templateReferenceIsValid = await this.demoTemplate.isValid(templateOctokit || octokit);
-            this.validation = {
-                templateExists: templateReferenceIsValid,
-                targetRepositoryExists: await repositoryExists(octokit, this.data.github_repository),
-            };
-        }
-        return this.validation;
-    }
-    get version() {
-        return this.data.version;
-    }
-    get repository() {
-        return this.data.github_repository;
-    }
-    get uuid() {
-        return this.data.uuid;
-    }
-    get asJsonString() {
-        return JSON.stringify(this.data);
-    }
-    get communicationIssueNumber() {
-        return this.data.communication_issue_number;
-    }
-    get actor() {
-        return this.data.requestor_handle;
-    }
-    get templateType() {
-        return this.data.demo_definition.type;
-    }
-    get templateJsonString() {
-        return JSON.stringify(this.data.demo_definition);
-    }
-    get additionalConfig() {
-        return this.data.demo_config;
-    }
-    get additionConfigJsonString() {
-        if (!this.data.demo_config) {
-            return '{}';
-        }
-        return JSON.stringify(this.data.demo_config);
-    }
-    getTerraformVariables() {
-        // const result = {
-        //   github_context: {
-        //     actor: this.user,
-        //     template_repository: this.template.getTerraformVariablesObject(),
-        //     template_repository_directory_path: this.template.getDirectoryPath(),
-        //     target_repository: {
-        //       ...this.target
-        //     },
-        //   },
-        //   azure_context: {},
-        //   gcp_context: {},
-        //   aws_context: {},
-        //   cloud_context: {
-        //     tags: {}
-        //   }
-        // };
-        // const result = {
-        //   github: {
-        //     actor: this.user,
-        //     target_repository: {
-        //       ...this.target
-        //     },
-        //   },
-        //   template: {
-        //     data: this.template.getJsonPayload()
-        //   },
-        //   azure_context: {},
-        //   gcp_context: {},
-        //   aws_context: {},
-        //   cloud_context: {
-        //     tags: {}
-        //   }
-        // };
-        // if (this.linkedIssueNumber) {
-        //   result.github_context['communication_issue_number'] = { id: this.linkedIssueNumber };
-        // }
-        // if (this.demoConfig) {
-        //   result.github_context['demo_config'] = this.demoConfig;
-        // }
-        // if (this.tags) {
-        //   result.cloud_context.tags = this.tags;
-        // }
-        // return result;
-        //TODO need to provide and build this as a type as per the boostrap wrappers and the data variable it expects
-        return {};
-    }
-}
-//# sourceMappingURL=DemoPayload.js.map
-;// CONCATENATED MODULE: ./lib/DemoDeployment.js
-
-
-
-const DAY_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
-const ENVIRONMENT_NAME_PREFIX = 'demo/';
-const GitHubDeploymentDataSchema = vine_default.object({
-    id: vine_default.number(),
-    node_id: vine_default.string(),
-    environment: vine_default.string(),
-    created_at: vine_default.string(),
-    updated_at: vine_default.string(),
-    description: vine_default.string().optional().nullable(),
-    ref: vine_default.string(),
-    task: vine_default.string(),
-    payload: vine_default.any().optional(), //TODO the APIs report this could be an object was locked to a string
-}).allowUnknownProperties();
-const GitHubDeploymentValidator = vine_default.compile(GitHubDeploymentDataSchema);
-class DemoDeployment {
-    data;
-    deploymentManager;
-    demoPayload;
-    constructor(data, deploymentManager) {
-        if (data.task !== DEMO_DEPLOYMENT_TASK) {
-            throw new Error(`Invalid payload type ${data.task}`);
-        }
-        this.data = data;
-        this.deploymentManager = deploymentManager;
-        try {
-            if (data.payload && data.payload.length > 0) {
-                this.demoPayload = new DemoPayload(JSON.parse(data.payload));
-            }
-        }
-        catch (err) {
-            this.demoPayload = undefined;
-        }
-    }
-    get id() {
-        return this.data.id;
-    }
-    get name() {
-        return this.data.environment;
-    }
-    get description() {
-        return this.data.description;
-    }
-    // In properly built deployment payloads, this should be present in the payload data
-    get uuid() {
-        return this.demoPayload?.uuid;
-        // const description = this.description;
-        // if (description) {
-        //   const matched = /uuid\:(.*)/.exec(description);
-        //   if (matched) {
-        //     return matched[1];
-        //   }
-        // }
-        // return undefined;
-    }
-    get environment() {
-        if (this.data.environment.indexOf(ENVIRONMENT_NAME_PREFIX) === 0) {
-            return this.data.environment.substring(ENVIRONMENT_NAME_PREFIX.length);
-        }
-        return this.data.environment;
-    }
-    get payload() {
-        return this.demoPayload;
-    }
-    getCurrentStatus() {
-        return this.deploymentManager.getDeploymentStatus(this.id);
-    }
-    getTrackingIssue() {
-        const payloadData = this.payload;
-        if (payloadData) {
-            return this.payload.communicationIssueNumber;
-        }
-        return undefined;
-    }
-    get createdAt() {
-        return this.data.created_at;
-    }
-    async isActive() {
-        const status = await this.getCurrentStatus();
-        if (status) {
-            return status.state === 'success';
-        }
-        return false;
-    }
-    async isErrored() {
-        return this.getCurrentStatus()
-            .then(status => {
-            if (status) {
-                return status.state === 'failure' || status.state === 'error';
-            }
-            return false;
-        });
-    }
-    async isMarkedForTermination() {
-        return this.getCurrentStatus()
-            .then(status => {
-            return status?.state === 'success' && status?.description === DEMO_STATES.marked_termination;
-        });
-    }
-    async getActiveDays() {
-        const isActive = await this.isActive();
-        if (isActive) {
-            return await this.getDaysInState();
-        }
-        return 0;
-    }
-    async getDaysInState() {
-        return this.getCurrentStatus().then(status => {
-            if (status) {
-                const now = Date.now(), updated = new Date(status.created_at).getTime();
-                return Math.floor((now - updated) / DAY_IN_MILLISECONDS);
-            }
-            return 0;
-        });
-    }
-    //TODO this should no longer be possible in practice due to the way the uuids are created
-    async isDuplicate() {
-        const issueId = this.getTrackingIssue();
-        if (issueId) {
-            const labels = await this.deploymentManager.getIssueLabels(issueId);
-            return labels.indexOf('duplicate') > -1;
-        }
-        return false;
-    }
-}
-//# sourceMappingURL=DemoDeployment.js.map
-;// CONCATENATED MODULE: ./lib/GitHubDeploymentManager.js
-
-
-class GitHubDeploymentManager {
-    github;
-    repo;
-    ref;
-    constructor(repo, github, ref) {
-        this.repo = repo;
-        this.github = github;
-        this.ref = ref || 'main';
-    }
-    getDemoDeploymentForUUID(uuid) {
-        return this.getAllDemoDeployments()
-            .then(deployments => {
-            let matched = deployments?.filter((deployment) => deployment.uuid === uuid);
-            if (matched && matched.length > 0) {
-                return matched[0];
-            }
-        });
-    }
-    getDeploymentStatus(id) {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
-            ...this.repo,
-            deployment_id: id,
-            per_page: 100,
-        }).then(statuses => {
-            if (statuses && statuses.length > 0) {
-                //@ts-ignore
-                return createDeploymentStatus(statuses[0]);
-            }
-            return undefined;
-        });
-    }
-    deactivateDeployment(id) {
-        return this.github.rest.repos.createDeploymentStatus({
-            ...this.repo,
-            deployment_id: id,
-            state: 'inactive',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 201;
-        });
-    }
-    deleteDeployment(id) {
-        return this.github.rest.repos.deleteDeployment({
-            ...this.repo,
-            deployment_id: id,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 204;
-        });
-    }
-    deactivateAndDeleteDeployment(id) {
-        const self = this;
-        return self.deactivateDeployment(id)
-            .then(() => {
-            return self.deleteDeployment(id);
-        });
-    }
-    getEnvironmentDeployments(name) {
-        return this.github.rest.repos.listDeployments({
-            ...this.repo,
-            environment: name,
-            task: 'deploy',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.status === 200 && resp.data) {
-                //@ts-ignore
-                return Promise.all(resp.data.map((data) => generateDemoDeployment(data, this)));
-            }
-            return undefined;
-        });
-    }
-    getEnvironmentDeploymentId(name) {
-        return this.getEnvironmentDeployments(name)
-            .then(results => {
-            if (results && results.length > 0) {
-                return results[0].id;
-            }
-            return undefined;
-        });
-    }
-    getAllDemoDeployments() {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
-            ...this.repo,
-            task: DEMO_DEPLOYMENT_TASK,
-            per_page: 100
-        }).then(deployments => {
-            return this.extractDemoDeploymentsFromResponse(deployments);
-        });
-    }
-    getDemoDeployments(name) {
-        return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
-            ...this.repo,
-            environment: `demo/${name}`,
-            task: DEMO_DEPLOYMENT_TASK,
-            per_page: 100
-        }).then(deployments => {
-            return this.extractDemoDeploymentsFromResponse(deployments);
-        });
-    }
-    getDemoDeployment(name) {
-        return this.getDemoDeployments(name)
-            .then(results => {
-            if (results && results.length > 0) {
-                return results[0];
-            }
-            return undefined;
-        });
-    }
-    getDemoDeploymentById(id) {
-        return this.github.rest.repos.getDeployment({
-            ...this.repo,
-            deployment_id: id,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
-                throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
-            }
-            return generateDemoDeployment(resp.data, this);
-        });
-    }
-    // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
-    createDemoDeployment(demo) {
-        return this.github.rest.repos.createDeployment({
-            ...this.repo,
-            ref: this.ref,
-            task: DEMO_DEPLOYMENT_TASK,
-            auto_merge: false,
-            required_contexts: [],
-            environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
-            payload: demo.asJsonString,
-            description: `${demo.uuid}`,
-            transient_environment: true,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            },
-        }).then(result => {
-            if (result.status === 201) {
-                return generateDemoDeployment(result.data, this);
-            }
-            else {
-                throw new Error(`Invalid status response ${result.status} when creating deployment`);
-            }
-        });
-    }
-    setDemoDeploymentStateProvisioning(id) {
-        return this.updateDeploymentStatus(id, 'in_progress', DEMO_STATES.provisioning);
-    }
-    setDemoDeploymentStateProvisioned(id) {
-        return this.updateDeploymentStatus(id, 'success', DEMO_STATES.provisioned);
-    }
-    setDemoDeploymentStateErrored(id) {
-        return this.updateDeploymentStatus(id, 'error', DEMO_STATES.error);
-    }
-    updateDeploymentStatus(id, state, description, logUrl) {
-        const payload = {
-            ...this.repo,
-            deployment_id: id,
-            state: state,
-            auto_inactive: true,
-            description: description ?? '',
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            },
-        };
-        if (logUrl) {
-            payload['log_url'] = logUrl;
-        }
-        return this.github.rest.repos.createDeploymentStatus(payload)
-            .then(resp => {
-            if (resp.status !== 201) {
-                throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
-            }
-            return createDeploymentStatus(resp.data);
-        });
-    }
-    getIssueLabels(issueId) {
-        return this.github.rest.issues.listLabelsOnIssue({
-            ...this.repo,
-            issue_number: issueId,
-            per_page: 100,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.data.map(label => label.name);
-        }).catch(() => {
-            return [];
-        });
-    }
-    addIssueLabels(issueId, ...label) {
-        return this.github.rest.issues.addLabels({
-            ...this.repo,
-            issue_number: issueId,
-            labels: label,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            if (resp.status === 200) {
-                return true;
-            }
-            else if (resp.status === 410) {
-                return false;
-            }
-            else {
-                throw new Error(`Unexpected status code ${resp.status} when adding labels to issue ${issueId}`);
-            }
-        });
-    }
-    removeIssueLabels(issueId, ...label) {
-        const promises = [];
-        label.forEach(label => {
-            const promise = this.github.rest.issues.removeLabel({
-                ...this.repo,
-                issue_number: issueId,
-                name: label,
-                headers: {
-                    'X-GitHub-Api-Version': '2022-11-28'
-                }
-            })
-                .catch(err => {
-                // Ignore errors that prove the label is not there
-                if (err.status !== 404 && err.status !== 410) {
-                    throw err;
-                }
-            }).then(() => {
-                return true;
-            });
-            promises.push(promise);
-        });
-        return Promise.all(promises).then(results => {
-            return true;
-        });
-    }
-    addIssueComment(id, comment) {
-        return this.github.rest.issues.createComment({
-            ...this.repo,
-            issue_number: id,
-            body: comment,
-            headers: {
-                'X-GitHub-Api-Version': '2022-11-28'
-            }
-        }).then(resp => {
-            return resp.status === 201;
-        });
-    }
-    async extractDemoDeploymentsFromResponse(resp) {
-        const manager = this;
-        if (resp && resp.length > 0) {
-            const results = await Promise.all(resp.map((data) => { return generateDemoDeployment(data, manager); }));
-            return results;
-        }
-        return undefined;
-    }
-}
-async function generateDemoDeployment(deployment, manager) {
-    //TODO could use Vine definition here to validate the payload
-    try {
-        const payload = await GitHubDeploymentValidator.validate(deployment);
-        return new DemoDeployment(payload, manager);
-    }
-    catch (err) {
-        //TODO need to extract the parsing error from VineJS
-        throw err;
-    }
-    ;
-}
-function createDeploymentStatus(status) {
-    return {
-        id: status.id,
-        state: status.state,
-        description: status.description || '',
-        environment: status.environment || '',
-        created_at: status.created_at,
-        updated_at: status.updated_at,
-        log_url: status.log_url,
-    };
-}
-//# sourceMappingURL=GitHubDeploymentManager.js.map
-;// CONCATENATED MODULE: ./lib/actions/demo-provisioning-status.js
-
+;// CONCATENATED MODULE: ./lib/actions/get-template-metadata.js
 
 
 
@@ -38917,72 +38254,38 @@ async function run() {
 }
 run();
 async function exec() {
-    const inputs = {
-        name: lib_core.getInput('name'),
-        id: parseInt(lib_core.getInput('id')),
-        run_id: getRequiredInput('actions_run_id'),
-        status: getRequiredInput('status')
-    };
-    if (!!inputs.name && !!inputs.id) {
-        lib_core.setFailed(`One of 'name' or 'id' must be provided to update a demo deployment state.`);
+    const templateMetadataPath = lib_core.getInput('template_metadata');
+    let metadata;
+    try {
+        const fileConents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
+        const json = JSON.parse(fileConents);
+        metadata = await parseDemoMetadata(json);
     }
-    else {
-        const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
-        let deployment = await getDeployment(deploymentManager, inputs);
-        const state = validateStatus(inputs.status);
-        const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
-        lib_core.info(`Updating demo deployment ${deployment.id} status...`);
-        await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
-        lib_core.info('done.');
-        const issueId = deployment.getTrackingIssue();
-        if (issueId) {
-            lib_core.info(`Updating issue ${issueId} labels to track state...`);
-            if (state?.labelsAdd?.length > 0) {
-                await deploymentManager.addIssueLabels(issueId, ...state.labelsAdd);
-            }
-            if (state?.labelsRemove?.length > 0) {
-                await deploymentManager.removeIssueLabels(issueId, ...state.labelsRemove);
-            }
-            lib_core.info('done.');
-        }
+    catch (err) {
+        lib_core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);
+        throw err;
+    }
+    lib_core.startGroup(`Demo Metadata`);
+    setOutput(`template_name`, metadata.name);
+    setOutput(`template_version`, metadata.version);
+    if (metadata.terraformMetadata) {
+        setOutput(`tf_metadata_json`, JSON.stringify(metadata.terraformMetadata));
+        setOutput('tf_metadta_stack_path', metadata.terraformMetadata.stack_path);
+        outputScriptValue('create_pre', metadata.terraformMetadata?.lifecycle_scripts?.create?.pre);
+        outputScriptValue('create_post', metadata.terraformMetadata?.lifecycle_scripts?.create?.post);
+        outputScriptValue('create_finalize', metadata.terraformMetadata?.lifecycle_scripts?.create?.finalize);
+        outputScriptValue('destroy_pre', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.pre);
+        outputScriptValue('destroy_post', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.post);
+        outputScriptValue('destory_finalize', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.finalize);
+    }
+    lib_core.endGroup();
+}
+function outputScriptValue(name, value) {
+    if (value && value.trim().length > 0) {
+        setOutput(`tf_metadata_scripts_${name}`, value);
     }
 }
-function validateStatus(status) {
-    if (status === 'success') {
-        return {
-            deploymentState: 'success',
-            demoState: DEMO_STATES.provisioned,
-            labelsAdd: [DEMO_STATES.provisioned],
-            labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.error],
-        };
-    }
-    else if (status === 'failure' || status === 'cancelled') {
-        return {
-            deploymentState: 'failure',
-            demoState: DEMO_STATES.error,
-            labelsAdd: [DEMO_STATES.error],
-            labelsRemove: [DEMO_STATES.provisioning, DEMO_STATES.provisioned, DEMO_STATES.destroying, DEMO_STATES.destroyed],
-        };
-    }
-    else {
-        throw new Error(`Unsupported status type provided '${status}'`);
-    }
-}
-async function getDeployment(deploymentManager, inputs) {
-    let deployment;
-    if (inputs.name) {
-        const result = await deploymentManager.getDemoDeployment(inputs.name);
-        if (!result) {
-            throw new Error(`Failed to locate demo deployment for name '${inputs.name}'`);
-        }
-        deployment = result;
-    }
-    else {
-        deployment = await deploymentManager.getDemoDeploymentById(inputs.id);
-    }
-    return deployment;
-}
-//# sourceMappingURL=demo-provisioning-status.js.map
+//# sourceMappingURL=get-template-metadata.js.map
 })();
 
 

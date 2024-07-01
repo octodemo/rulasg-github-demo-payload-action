@@ -65,14 +65,15 @@ export class DemoDeployment {
 
   // In properly built deployment payloads, this should be present in the payload data
   get uuid() {
-    const description = this.description;
-    if (description) {
-      const matched = /uuid\:(.*)/.exec(description);
-      if (matched) {
-        return matched[1];
-      }
-    }
-    return undefined;
+    return this.demoPayload?.uuid;
+    // const description = this.description;
+    // if (description) {
+    //   const matched = /uuid\:(.*)/.exec(description);
+    //   if (matched) {
+    //     return matched[1];
+    //   }
+    // }
+    // return undefined;
   }
 
   get environment() {
