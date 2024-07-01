@@ -3,7 +3,7 @@ description: Parses the template metadata for a template
 author: Peter Murray
 
 inputs:
-  template_metadata:
+  template_metadata_file:
     description: The path to the template metadata file
     required: true
 

@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
-import { inspect } from 'util';
 import * as fs from 'fs';
+import { inspect } from 'util';
 import { DemoMetadata, parseDemoMetadata } from '../demo-metadata/DemoMetadata.js';
 import { setOutput } from '../util.js';
 
@@ -16,7 +16,7 @@ run();
 
 
 async function exec() {
-  const templateMetadataPath = core.getInput('template_metadata');
+  const templateMetadataPath = core.getInput('template_metadata_file');
 
   let metadata: DemoMetadata;
   try {

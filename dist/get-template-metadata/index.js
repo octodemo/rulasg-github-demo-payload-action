@@ -33030,10 +33030,10 @@ var __webpack_exports__ = {};
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var lib_core = __nccwpck_require__(2186);
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(3837);
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(7147);
+// EXTERNAL MODULE: external "util"
+var external_util_ = __nccwpck_require__(3837);
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -38254,7 +38254,7 @@ async function run() {
 }
 run();
 async function exec() {
-    const templateMetadataPath = lib_core.getInput('template_metadata');
+    const templateMetadataPath = lib_core.getInput('template_metadata_file');
     let metadata;
     try {
         const fileConents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
