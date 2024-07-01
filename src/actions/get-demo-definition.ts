@@ -20,7 +20,7 @@ run();
 async function exec() {
   const deploymentId = getRequiredInput('deployment_id');
 
-  const octokit = getOctokit();
+  const octokit = getOctokit(getRequiredInput('github_token'));
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
   const demoDeployment: DemoDeployment = await deploymentManager.getDemoDeploymentById(Number.parseInt(deploymentId));

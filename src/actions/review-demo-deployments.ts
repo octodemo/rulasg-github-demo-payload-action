@@ -20,7 +20,8 @@ async function exec() {
   const warningActiveDays: number = parseInt(getRequiredInput('warn_active_days'));
   const maxActiveDays: number = parseInt(getRequiredInput('terminate_active_days'));
 
-  const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
   const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
 
   core.info(`Demo deployment analysis`);

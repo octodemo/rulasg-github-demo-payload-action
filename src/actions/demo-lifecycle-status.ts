@@ -24,7 +24,8 @@ async function exec() {
     status: getRequiredInput('lifecycle_status')
   };
 
-  const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
   const deployment = await deploymentManager.getDemoDeploymentById(inputs.id);
   const currentDeploymentState = await deployment.getCurrentStatus();
 

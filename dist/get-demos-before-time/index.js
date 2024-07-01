@@ -39023,7 +39023,8 @@ async function run() {
 run();
 async function exec() {
     const beforeDate = new Date(getRequiredInput('before'));
-    const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+    const octokit = getOctokit(getRequiredInput('github_token'));
+    const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
     const allDeployments = await demoReview.getAllDemoDeployments();
     const results = [];
     lib_core.startGroup('Deploy Deployments');

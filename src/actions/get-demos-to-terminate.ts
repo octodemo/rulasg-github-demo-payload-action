@@ -18,7 +18,8 @@ run();
 
 async function exec() {
   const gracePeriod: number = parseInt(getRequiredInput('grace_period'));
-  const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
   const toTerminate: DemoReview[] = await demoReview.getDemosToTerminate(gracePeriod);
 
   reportTerminations(toTerminate);

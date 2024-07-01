@@ -19,7 +19,8 @@ run();
 
 async function exec() {
   const beforeDate: Date = new Date(getRequiredInput('before'));
-  const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
 
   const allDeployments = await demoReview.getAllDemoDeployments();
 

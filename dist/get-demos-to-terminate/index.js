@@ -39023,7 +39023,8 @@ async function run() {
 run();
 async function exec() {
     const gracePeriod = parseInt(getRequiredInput('grace_period'));
-    const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+    const octokit = getOctokit(getRequiredInput('github_token'));
+    const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
     const toTerminate = await demoReview.getDemosToTerminate(gracePeriod);
     reportTerminations(toTerminate);
     get_demos_to_terminate_setOutput('terminations', toTerminate);

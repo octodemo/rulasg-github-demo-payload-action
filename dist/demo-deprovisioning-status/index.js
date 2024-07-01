@@ -38935,7 +38935,8 @@ async function exec() {
         lib_core.setFailed(`One of 'name' or 'id' must be provided to update a demo deployment state.`);
     }
     else {
-        const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
+        const octokit = getOctokit(getRequiredInput('github_token'));
+        const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
         let deployment = await getDeployment(deploymentManager, inputs);
         const state = validateStatus(inputs.status);
         const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;

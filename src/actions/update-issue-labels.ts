@@ -26,7 +26,8 @@ async function exec(): Promise<void> {
   } else {
     const repo = getRepository()
       , issueNumber: number =  getIssueNumber()
-      , manager = new GitHubDeploymentManager(repo, getOctokit())
+      , octokit = getOctokit(getRequiredInput('github_token'))
+      , manager = new GitHubDeploymentManager(repo, octokit)
       ;
 
     core.info(`Updating labels for issue: ${issueNumber}`);

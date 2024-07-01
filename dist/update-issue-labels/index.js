@@ -38929,7 +38929,7 @@ async function exec() {
         lib_core.info('No labels specified to add or remove, nothing to do.');
     }
     else {
-        const repo = update_issue_labels_getRepository(), issueNumber = getIssueNumber(), manager = new GitHubDeploymentManager(repo, getOctokit());
+        const repo = update_issue_labels_getRepository(), issueNumber = getIssueNumber(), octokit = getOctokit(getRequiredInput('github_token')), manager = new GitHubDeploymentManager(repo, octokit);
         lib_core.info(`Updating labels for issue: ${issueNumber}`);
         if (labelsToAdd.length > 0) {
             lib_core.info(`Adding labels: ${JSON.stringify(labelsToAdd)}`);

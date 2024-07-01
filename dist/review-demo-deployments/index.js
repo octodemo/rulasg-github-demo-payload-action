@@ -39024,7 +39024,8 @@ run();
 async function exec() {
     const warningActiveDays = parseInt(getRequiredInput('warn_active_days'));
     const maxActiveDays = parseInt(getRequiredInput('terminate_active_days'));
-    const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+    const octokit = getOctokit(getRequiredInput('github_token'));
+    const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
     const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
     lib_core.info(`Demo deployment analysis`);
     review_demo_deployments_reportErrors(analysis.errored);

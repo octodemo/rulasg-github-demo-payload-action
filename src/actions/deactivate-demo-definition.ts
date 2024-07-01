@@ -22,7 +22,7 @@ async function exec() {
     demo_deployment_id: getRequiredInput('demo_deployment_id'),
   };
 
-  const octokit = getOctokit();
+  const octokit = getOctokit(getRequiredInput('github_token'));
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
   const environment_id = parseInt(inputs.environment_deployment_id);
