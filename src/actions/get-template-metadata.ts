@@ -31,6 +31,9 @@ async function exec() {
   core.startGroup(`Demo Metadata`);
   setOutput(`template_name`, metadata.name);
   setOutput(`template_version`, metadata.version);
+
+  setOutput(`template_variant`, metadata.variant);
+
   if (metadata.terraformMetadata) {
     setOutput(`tf_metadata_json`, JSON.stringify(metadata.terraformMetadata));
     setOutput('tf_metadta_stack_path', metadata.terraformMetadata.stack_path);
@@ -49,6 +52,6 @@ async function exec() {
 
 function outputScriptValue(name: string, value: string | undefined) {
   if (value && value.trim().length > 0) {
-    setOutput(`tf_metadata_scripts_${name}`, value);
+    setOutput(`lifecycle_script_${name}`, value);
   }
 }
