@@ -1,6 +1,6 @@
 import vine from "@vinejs/vine";
 import { Infer } from '@vinejs/vine/types';
-import { validate } from "src/demo-payload/TypeValidations.js";
+import { validate } from '../util.js';
 
 const TERRAFORM_SCHEMA = vine.object({
   stack_path: vine.string(),

@@ -31104,14 +31104,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 3390:
-/***/ ((module) => {
-
-module.exports = eval("require")("src/demo-payload/TypeValidations.js");
-
-
-/***/ }),
-
 /***/ 9491:
 /***/ ((module) => {
 
@@ -38058,93 +38050,10 @@ var vine_default = vine;
 
 
 //# sourceMappingURL=index.js.map
-// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/demo-payload/TypeValidations.js
-var TypeValidations = __nccwpck_require__(3390);
-;// CONCATENATED MODULE: ./lib/demo-metadata/DemoMetadata.js
-
-
-const TERRAFORM_SCHEMA = vine_default.object({
-    stack_path: vine_default.string(),
-    lifecycle_scripts: vine_default.object({
-        create: vine_default.object({
-            pre: vine_default.string().optional(),
-            post: vine_default.string().optional(),
-            finalize: vine_default.string().optional(),
-            secrets: vine_default.array(vine_default.string()).optional(),
-        }).optional(),
-        destroy: vine_default.object({
-            pre: vine_default.string().optional(),
-            post: vine_default.string().optional(),
-            finalize: vine_default.string().optional(),
-            secrets: vine_default.array(vine_default.string()).optional(),
-        }).optional(),
-    }).optional(),
-});
-const SCRIPT_SCHEMA = vine_default.object({
-    create: vine_default.object({
-        pre: vine_default.string().optional(),
-        post: vine_default.string().optional(),
-        finalize: vine_default.string().optional(),
-        secrets: vine_default.array(vine_default.string()).optional(),
-    }).optional(),
-    destroy: vine_default.object({
-        pre: vine_default.string().optional(),
-        post: vine_default.string().optional(),
-        finalize: vine_default.string().optional(),
-        secrets: vine_default.array(vine_default.string()).optional(),
-    }).optional(),
-});
-const FRAMEWORK_V1_SCHEMA_GROUP = vine_default.group([
-    vine_default.group["if"]((data) => {
-        return data.version === 1 && data.variant === 'terraform';
-    }, {
-        variant: vine_default.literal('terraform'),
-        terraform: TERRAFORM_SCHEMA,
-    }),
-    vine_default.group["if"]((data) => {
-        return data.version === 1 && data.variant === 'script';
-    }, {
-        variant: vine_default.literal('script'),
-        script: SCRIPT_SCHEMA,
-    }),
-]).otherwise((data, field) => {
-    field.report('Framework variant and version combination is not supported', 'unsupported_variant', field);
-});
-const FRAMEWORK_V1_SCHEMA = vine_default.object({
-    name: vine_default.string(),
-    version: vine_default.number().withoutDecimals().positive(),
-    resources: vine_default.array(vine_default.string()),
-    variant: vine_default.string().in(['terraform', 'script']),
-}).merge(FRAMEWORK_V1_SCHEMA_GROUP);
-async function parseDemoMetadata(data) {
-    const parsed = await (0,TypeValidations.validate)(FRAMEWORK_V1_SCHEMA, data);
-    return new DemoMetadata(parsed);
-}
-class DemoMetadata {
-    data;
-    constructor(data) {
-        this.data = data;
-    }
-    get name() {
-        return this.data.name;
-    }
-    get version() {
-        return this.data.version;
-    }
-    get variant() {
-        return this.data.variant;
-    }
-    get resources() {
-        return this.data.resources;
-    }
-    get terraformMetadata() {
-        return this.data.variant === 'terraform' ? this.data.terraform : undefined;
-    }
-}
-//# sourceMappingURL=DemoMetadata.js.map
 // EXTERNAL MODULE: ./node_modules/@actions/github/lib/github.js
 var lib_github = __nccwpck_require__(5438);
 ;// CONCATENATED MODULE: ./lib/util.js
+
 
 
 function getOctokit(token) {
@@ -38236,7 +38145,105 @@ function filterObjectKeys(originalObject, keysToRemove) {
     });
     return filteredObject;
 }
+async function validate(schema, data) {
+    try {
+        const validator = vine_default.compile(schema);
+        const result = await validator.validate(JSON.parse(data));
+        return result;
+    }
+    catch (err) {
+        if (err instanceof main_exports.E_VALIDATION_ERROR) {
+            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
+            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
+            throw new Error(`Validation of JSON payload failed: ${failures}.`);
+        }
+        // Rethrow the error
+        throw err;
+    }
+}
 //# sourceMappingURL=util.js.map
+;// CONCATENATED MODULE: ./lib/demo-metadata/DemoMetadata.js
+
+
+const TERRAFORM_SCHEMA = vine_default.object({
+    stack_path: vine_default.string(),
+    lifecycle_scripts: vine_default.object({
+        create: vine_default.object({
+            pre: vine_default.string().optional(),
+            post: vine_default.string().optional(),
+            finalize: vine_default.string().optional(),
+            secrets: vine_default.array(vine_default.string()).optional(),
+        }).optional(),
+        destroy: vine_default.object({
+            pre: vine_default.string().optional(),
+            post: vine_default.string().optional(),
+            finalize: vine_default.string().optional(),
+            secrets: vine_default.array(vine_default.string()).optional(),
+        }).optional(),
+    }).optional(),
+});
+const SCRIPT_SCHEMA = vine_default.object({
+    create: vine_default.object({
+        pre: vine_default.string().optional(),
+        post: vine_default.string().optional(),
+        finalize: vine_default.string().optional(),
+        secrets: vine_default.array(vine_default.string()).optional(),
+    }).optional(),
+    destroy: vine_default.object({
+        pre: vine_default.string().optional(),
+        post: vine_default.string().optional(),
+        finalize: vine_default.string().optional(),
+        secrets: vine_default.array(vine_default.string()).optional(),
+    }).optional(),
+});
+const FRAMEWORK_V1_SCHEMA_GROUP = vine_default.group([
+    vine_default.group["if"]((data) => {
+        return data.version === 1 && data.variant === 'terraform';
+    }, {
+        variant: vine_default.literal('terraform'),
+        terraform: TERRAFORM_SCHEMA,
+    }),
+    vine_default.group["if"]((data) => {
+        return data.version === 1 && data.variant === 'script';
+    }, {
+        variant: vine_default.literal('script'),
+        script: SCRIPT_SCHEMA,
+    }),
+]).otherwise((data, field) => {
+    field.report('Framework variant and version combination is not supported', 'unsupported_variant', field);
+});
+const FRAMEWORK_V1_SCHEMA = vine_default.object({
+    name: vine_default.string(),
+    version: vine_default.number().withoutDecimals().positive(),
+    resources: vine_default.array(vine_default.string()),
+    variant: vine_default.string().in(['terraform', 'script']),
+}).merge(FRAMEWORK_V1_SCHEMA_GROUP);
+async function parseDemoMetadata(data) {
+    const parsed = await validate(FRAMEWORK_V1_SCHEMA, data);
+    return new DemoMetadata(parsed);
+}
+class DemoMetadata {
+    data;
+    constructor(data) {
+        this.data = data;
+    }
+    get name() {
+        return this.data.name;
+    }
+    get version() {
+        return this.data.version;
+    }
+    get variant() {
+        return this.data.variant;
+    }
+    get resources() {
+        return this.data.resources;
+    }
+    get terraformMetadata() {
+        return this.data.variant === 'terraform' ? this.data.terraform : undefined;
+    }
+}
+//# sourceMappingURL=DemoMetadata.js.map
 ;// CONCATENATED MODULE: ./lib/actions/get-template-metadata.js
 
 

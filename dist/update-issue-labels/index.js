@@ -31104,6 +31104,14 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 3611:
+/***/ ((module) => {
+
+module.exports = eval("require")("src/util.js");
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -38072,6 +38080,7 @@ const LIFECYCLE_STATES = {
 ;// CONCATENATED MODULE: ./lib/util.js
 
 
+
 function getOctokit(token) {
     let octokitToken;
     if (!token || token.trim().length === 0) {
@@ -38161,8 +38170,27 @@ function filterObjectKeys(originalObject, keysToRemove) {
     });
     return filteredObject;
 }
+async function util_validate(schema, data) {
+    try {
+        const validator = vine.compile(schema);
+        const result = await validator.validate(JSON.parse(data));
+        return result;
+    }
+    catch (err) {
+        if (err instanceof errors.E_VALIDATION_ERROR) {
+            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
+            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
+            throw new Error(`Validation of JSON payload failed: ${failures}.`);
+        }
+        // Rethrow the error
+        throw err;
+    }
+}
 //# sourceMappingURL=util.js.map
+// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/util.js
+var util = __nccwpck_require__(3611);
 ;// CONCATENATED MODULE: ./lib/demo-payload/TypeValidations.js
+
 
 const TEMPLATE_OPTION_CONTAINER = 'container';
 const TEMPLATE_OPTION_REPOSITORY = 'repository';
@@ -38221,22 +38249,6 @@ async function getDemoSchemaFromJsonString(data) {
 }
 async function getDemoTemplateDefinitionFromJsonString(data) {
     return await validate(DEMO_TEMPLATE_DEFINITION, data);
-}
-async function validate(schema, data) {
-    try {
-        const validator = vine.compile(schema);
-        const result = await validator.validate(JSON.parse(data));
-        return result;
-    }
-    catch (err) {
-        if (err instanceof errors.E_VALIDATION_ERROR) {
-            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
-            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
-            throw new Error(`Validation of JSON payload failed: ${failures}.`);
-        }
-        // Rethrow the error
-        throw err;
-    }
 }
 //# sourceMappingURL=TypeValidations.js.map
 ;// CONCATENATED MODULE: ./lib/demo-payload/DemoTemplateDefinitionObject.js

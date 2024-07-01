@@ -31104,6 +31104,14 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 3611:
+/***/ ((module) => {
+
+module.exports = eval("require")("src/util.js");
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -38038,8 +38046,8 @@ var Vine = class extends SchemaBuilder {
 };
 
 // index.ts
-var vine = new Vine();
-var vine_default = vine;
+var chunk_46WINKKP_vine = new Vine();
+var vine_default = chunk_46WINKKP_vine;
 
 
 //# sourceMappingURL=chunk-46WINKKP.js.map
@@ -38070,6 +38078,7 @@ const LIFECYCLE_STATES = {
 };
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/util.js
+
 
 
 function getOctokit(token) {
@@ -38161,8 +38170,27 @@ function filterObjectKeys(originalObject, keysToRemove) {
     });
     return filteredObject;
 }
+async function util_validate(schema, data) {
+    try {
+        const validator = vine.compile(schema);
+        const result = await validator.validate(JSON.parse(data));
+        return result;
+    }
+    catch (err) {
+        if (err instanceof errors.E_VALIDATION_ERROR) {
+            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
+            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
+            throw new Error(`Validation of JSON payload failed: ${failures}.`);
+        }
+        // Rethrow the error
+        throw err;
+    }
+}
 //# sourceMappingURL=util.js.map
+// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/util.js
+var util = __nccwpck_require__(3611);
 ;// CONCATENATED MODULE: ./lib/demo-payload/TypeValidations.js
+
 
 const TEMPLATE_OPTION_CONTAINER = 'container';
 const TEMPLATE_OPTION_REPOSITORY = 'repository';
@@ -38220,23 +38248,7 @@ async function getDemoSchemaFromJsonString(data) {
     return validate(DEMO_PAYLOAD_SCHEMA, data);
 }
 async function getDemoTemplateDefinitionFromJsonString(data) {
-    return await validate(DEMO_TEMPLATE_DEFINITION, data);
-}
-async function validate(schema, data) {
-    try {
-        const validator = vine_default.compile(schema);
-        const result = await validator.validate(JSON.parse(data));
-        return result;
-    }
-    catch (err) {
-        if (err instanceof main_exports.E_VALIDATION_ERROR) {
-            // Using SimpleErrorReporter means we have a messages array with the failures do a rough conversion for now
-            const failures = err.messages.map((errorMessages) => { return errorMessages.message; }).join('; ');
-            throw new Error(`Validation of JSON payload failed: ${failures}.`);
-        }
-        // Rethrow the error
-        throw err;
-    }
+    return await (0,util.validate)(DEMO_TEMPLATE_DEFINITION, data);
 }
 //# sourceMappingURL=TypeValidations.js.map
 ;// CONCATENATED MODULE: ./lib/demo-payload/DemoTemplateDefinitionObject.js
