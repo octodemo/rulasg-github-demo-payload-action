@@ -18,23 +18,24 @@ run();
 
 async function exec() {
   const inputs = {
-    environment_deployment_id: getRequiredInput('environment_deployment_id'),
+    environment_deployment_id: core.getInput('environment_deployment_id'),
     demo_deployment_id: getRequiredInput('demo_deployment_id'),
   };
 
   const octokit = getOctokit(getRequiredInput('github_token'));
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
 
-  const environment_id = parseInt(inputs.environment_deployment_id);
-  if (isNaN(environment_id)) {
-    throw new Error(`environment_deployment_id parameter '${inputs.environment_deployment_id}', is not a valid number`);
+  if (inputs.environment_deployment_id && inputs.environment_deployment_id.trim().length > 0) {
+    const environment_id = parseInt(inputs.environment_deployment_id);
+    if (isNaN(environment_id)) {
+      throw new Error(`environment_deployment_id parameter '${inputs.environment_deployment_id}', is not a valid number`);
+    }
+    core.startGroup('Environment');
+    core.info(`Deactivating environment ${environment_id}`);
+    const envResult = await deploymentManager.deactivateAndDeleteDeployment(environment_id);
+    core.info(`deactivated? ${envResult}`);
+    core.endGroup();
   }
-  core.startGroup('Environment');
-  core.info(`Deactivating environment ${environment_id}`);
-  const envResult = await deploymentManager.deactivateAndDeleteDeployment(environment_id);
-  core.info(`deactivated? ${envResult}`);
-  core.endGroup();
-
 
   const demo_deployment_id = parseInt(inputs.demo_deployment_id);
   if (isNaN(demo_deployment_id)) {

@@ -9,7 +9,7 @@ inputs:
 
   environment_deployment_id:
     description: the id of the environment deployment that tracks the demo repository and resources.
-    required: true
+    required: false
 
   demo_deployment_id:
     description: The id of the demo deployment that contains the demo metadata.
