@@ -44,7 +44,7 @@ async function exec() {
 
     outputScriptValue('destroy_pre', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.pre);
     outputScriptValue('destroy_post', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.post);
-    outputScriptValue('destory_finalize', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.finalize);
+    outputScriptValue('destroy_finalize', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.finalize);
   }
 
   core.endGroup();
