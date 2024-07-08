@@ -57,9 +57,16 @@ async function exec() {
     setOutput('demo_deployment_github_repository_name', repo.repo);
     setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
 
-    //TODO finish this off, the terraform variables might need another action to get them instead?
-    //core.startGroup('Terraform variables');
-    //core.info(JSON.stringify(demoDeployment.getTerraformVariables(), null, 2));
+    const demo_parameters_payload = {
+      version: demoPayload.version,
+      github_repository: repo,
+      requestor_handle: demoPayload.actor,
+      uuid: demoPayload.uuid,
+      communication_issue_number: demoPayload.communicationIssueNumber,
+      demo_config: demoPayload.additionalConfig,
+      demo_definition_json: demoPayload.demoTemplate.asJsonString
+    };
+    setOutput('demo_deployment_demo_parameters_json', JSON.stringify(demo_parameters_payload));
   }
   core.endGroup();
 }
