@@ -33026,6 +33026,32 @@ var lib_core = __nccwpck_require__(2186);
 var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
+;// CONCATENATED MODULE: ./lib/action-utils.js
+
+function getRequiredInput(name) {
+    return lib_core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    lib_core.info(`  ${name}: ${value}`);
+    lib_core.setOutput(name, value);
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -38880,32 +38906,6 @@ function createDeploymentStatus(status) {
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
-;// CONCATENATED MODULE: ./lib/action-utils.js
-
-function getRequiredInput(name) {
-    return lib_core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    lib_core.info(`  ${name}: ${value}`);
-    lib_core.setOutput(name, value);
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./lib/actions/get-demo-definition.js
 
 
@@ -38952,7 +38952,7 @@ async function exec() {
         setOutput('demo_deployment_github_repository_owner', repo.owner);
         setOutput('demo_deployment_github_repository_name', repo.repo);
         setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
-        const demo_parameters_payload = {
+        const demo_parameters_payload = JSON.stringify({
             version: demoPayload.version,
             github_repository: repo,
             requestor_handle: demoPayload.actor,
@@ -38960,8 +38960,9 @@ async function exec() {
             communication_issue_number: demoPayload.communicationIssueNumber,
             demo_config: demoPayload.additionalConfig,
             demo_definition_json: demoPayload.demoTemplate.asJsonString
-        };
-        setOutput('demo_deployment_demo_parameters_json', JSON.stringify(demo_parameters_payload));
+        });
+        setOutput('demo_deployment_demo_parameters_json', demo_parameters_payload);
+        setOutput('demo_deployment_demo_parameters_json_b64', Buffer.from(demo_parameters_payload).toString('base64'));
     }
     lib_core.endGroup();
 }

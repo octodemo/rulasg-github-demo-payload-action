@@ -1,10 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { getRequiredInput, setOutput } from '../action-utils.js';
 import { DemoDeployment } from '../DemoDeployment.js';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
 import { getOctokit } from '../util.js';
-import { getRequiredInput, setOutput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -57,7 +57,7 @@ async function exec() {
     setOutput('demo_deployment_github_repository_name', repo.repo);
     setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
 
-    const demo_parameters_payload = {
+    const demo_parameters_payload = JSON.stringify({
       version: demoPayload.version,
       github_repository: repo,
       requestor_handle: demoPayload.actor,
@@ -65,8 +65,9 @@ async function exec() {
       communication_issue_number: demoPayload.communicationIssueNumber,
       demo_config: demoPayload.additionalConfig,
       demo_definition_json: demoPayload.demoTemplate.asJsonString
-    };
-    setOutput('demo_deployment_demo_parameters_json', JSON.stringify(demo_parameters_payload));
+    });
+    setOutput('demo_deployment_demo_parameters_json', demo_parameters_payload);
+    setOutput('demo_deployment_demo_parameters_json_b64', Buffer.from(demo_parameters_payload).toString('base64'));
   }
   core.endGroup();
 }
