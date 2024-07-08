@@ -38958,7 +38958,7 @@ async function exec() {
             requestor_handle: demoPayload.actor,
             uuid: demoPayload.uuid,
             communication_issue_number: demoPayload.communicationIssueNumber,
-            demo_config: demoPayload.additionalConfig,
+            demo_config_json: JSON.stringify(demoPayload.additionalConfig || {}),
             demo_definition_json: demoPayload.demoTemplate.asJsonString
         });
         setOutput('demo_deployment_demo_parameters_json', demo_parameters_payload);
