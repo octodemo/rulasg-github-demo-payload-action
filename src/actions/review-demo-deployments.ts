@@ -97,6 +97,6 @@ function displayDemoReview(review: DemoReview) {
     if (review.issue.labels) {
       core.info(`    labels: ${JSON.stringify(review.issue.labels)}`);
     }
-    core.info(`    url: https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/issues/${review.issue.id}`);
+    core.info(`    url: ${process.env.GITHUB_SERVER_URL}/${github.context.repo.owner}/${github.context.repo.repo}/issues/${review.issue.id}`);
   }
 }

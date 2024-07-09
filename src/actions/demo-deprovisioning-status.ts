@@ -1,12 +1,12 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { getRequiredInput } from '../action-utils.js';
 import { DEMO_STATES } from '../constants.js';
 import { DemoDeployment } from '../DemoDeployment.js';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
 import { DeploymentState } from '../types.js';
 import { getOctokit } from '../util.js';
-import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -35,7 +35,7 @@ async function exec() {
     let deployment = await getDeployment(deploymentManager, inputs);
 
     const state = validateStatus(inputs.status);
-    const logUrl = `https://github.com/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
+    const logUrl = `process.env.GITHUB_SERVER_URL/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
     await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);

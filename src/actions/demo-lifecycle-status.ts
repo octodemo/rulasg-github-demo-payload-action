@@ -31,7 +31,7 @@ async function exec() {
 
   if (currentDeploymentState?.state === 'success') {
     const status = validateStatus(inputs.status);
-    const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
+    const logUrl = `${process.env.GITHUB_SERVER_URL}/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
     await deploymentManager.updateDeploymentStatus(deployment.id, 'success', status.demoState, logUrl);

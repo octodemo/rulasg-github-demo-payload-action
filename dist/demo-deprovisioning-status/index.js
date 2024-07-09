@@ -33026,6 +33026,32 @@ var lib_core = __nccwpck_require__(2186);
 var github = __nccwpck_require__(5438);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
+;// CONCATENATED MODULE: ./lib/action-utils.js
+
+function getRequiredInput(name) {
+    return lib_core.getInput(name, { required: true });
+}
+function setOutput(name, value) {
+    core.info(`  ${name}: ${value}`);
+    core.setOutput(name, value);
+}
+function getTags(inputName) {
+    const raw = core.getInput(inputName), result = {};
+    if (raw) {
+        const tags = raw.split(',');
+        tags.forEach((tag) => {
+            const parts = tag.split('=');
+            if (parts.length == 2) {
+                result[parts[0].trim()] = parts[1].trim();
+            }
+            else {
+                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
+            }
+        });
+    }
+    return result;
+}
+//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./lib/constants.js
 const DEMO_DEPLOYMENT_TASK = 'demo:deployment';
 const DEMO_STATES = {
@@ -38880,32 +38906,6 @@ function createDeploymentStatus(status) {
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
-;// CONCATENATED MODULE: ./lib/action-utils.js
-
-function getRequiredInput(name) {
-    return lib_core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    core.info(`  ${name}: ${value}`);
-    core.setOutput(name, value);
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./lib/actions/demo-deprovisioning-status.js
 
 
@@ -38939,7 +38939,7 @@ async function exec() {
         const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
         let deployment = await getDeployment(deploymentManager, inputs);
         const state = validateStatus(inputs.status);
-        const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
+        const logUrl = `process.env.GITHUB_SERVER_URL/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
         lib_core.info(`Updating demo deployment ${deployment.id} status...`);
         await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
         lib_core.info('done.');
