@@ -38939,7 +38939,7 @@ async function exec() {
         const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
         let deployment = await getDeployment(deploymentManager, inputs);
         const state = validateStatus(inputs.status);
-        const logUrl = `process.env.GITHUB_SERVER_URL/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
+        const logUrl = `${process.env.GITHUB_SERVER_URL}/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
         lib_core.info(`Updating demo deployment ${deployment.id} status...`);
         await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
         lib_core.info('done.');

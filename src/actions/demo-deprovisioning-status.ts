@@ -35,7 +35,7 @@ async function exec() {
     let deployment = await getDeployment(deploymentManager, inputs);
 
     const state = validateStatus(inputs.status);
-    const logUrl = `process.env.GITHUB_SERVER_URL/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
+    const logUrl = `${process.env.GITHUB_SERVER_URL}/${ github.context.repo.owner }/${ github.context.repo.repo}/actions/runs/${ inputs.run_id }`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
     await deploymentManager.updateDeploymentStatus(deployment.id, state.deploymentState, state.demoState, logUrl);
