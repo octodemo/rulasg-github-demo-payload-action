@@ -15,14 +15,50 @@ outputs:
   demo_deployment_id:
     description: The ID for the deployment that contains the demo metadata and lifecycle.
 
-  communication_issue_number:
-    description: The optional issue number that is tracking the deployment lifecycle.
+  demo_deployment_name:
+    description: The environment name of the deployment
+
+  demo_deployment_description:
+    description: The description of the deployment
 
   demo_deployment_uuid:
     description: The UUID for the demo deployment.
 
-  demo_deployment_payload:
-    description: The JSON payload (in string encoded form) used to create the demo and resources.
+  communication_issue_number:
+    description: The optional issue number that is tracking the deployment lifecycle.
+
+  demo_deployment_payload_json:
+    description: The JSON payload used to create the demo and resources.
+
+  demo_deployment_payload_version:
+    description: The version of the payload.
+
+  demo_deployment_payload_template_type:
+    description: The type of template used to create the demo and resources.
+
+  demo_deployment_payload_template_json:
+    description: The JSON template used to create the demo and resources.
+
+  demo_deployment_payload_requestor:
+    description: The user who requested the demo deployment.
+
+  demo_deployment_payload_demo_config_json:
+    description: The JSON configuration for the demo.
+
+  demo_deployment_github_repository_owner:
+    description: The owner of the GitHub repository that contains the demo.
+
+  demo_deployment_github_repository_name:
+    description: The name of the GitHub repository that contains the demo.
+
+  demo_deployment_github_repository_full_name:
+    description: The full name of the GitHub repository that contains the demo.
+
+  demo_deployment_demo_parameters_json:
+    description: The JSON parameters for the demo.
+
+  demo_deployment_demo_parameters_json_b64:
+    description: The base64 encoded JSON parameters for the demo.
 
 runs:
   using: node20
