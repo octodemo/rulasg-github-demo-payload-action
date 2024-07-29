@@ -11,6 +11,11 @@ inputs:
     description: The deployment id to get the definition for
     required: true
 
+  github_server_url:
+    description: The GitHub server URL
+    default: ${{ github.server_url }}
+    required: true
+
 outputs:
   demo_deployment_id:
     description: The ID for the deployment that contains the demo metadata and lifecycle.

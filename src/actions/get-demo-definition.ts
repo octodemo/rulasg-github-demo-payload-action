@@ -4,6 +4,7 @@ import { inspect } from 'util';
 import { getRequiredInput, setOutput } from '../action-utils.js';
 import { DemoDeployment } from '../DemoDeployment.js';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import * as githubResolver from '../GitHubResolver.js';
 import { getOctokit } from '../util.js';
 
 async function run() {
@@ -19,6 +20,9 @@ run();
 
 async function exec() {
   const deploymentId = getRequiredInput('deployment_id');
+  const githubUrl = getRequiredInput('github_url');
+
+  const githubDetails = githubResolver.resolve(githubUrl);
 
   const octokit = getOctokit(getRequiredInput('github_token'));
   const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
@@ -57,15 +61,29 @@ async function exec() {
     setOutput('demo_deployment_github_repository_name', repo.repo);
     setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
 
-    const demo_parameters_payload = JSON.stringify({
+    const demoParameters = {
       version: demoPayload.version,
       github_repository: repo,
       requestor_handle: demoPayload.actor,
       uuid: demoPayload.uuid,
       communication_issue_number: demoPayload.communicationIssueNumber,
       demo_config_json: JSON.stringify(demoPayload.additionalConfig || {}),
-      demo_definition_json: demoPayload.demoTemplate.asJsonString
-    });
+      demo_definition_json: demoPayload.demoTemplate.asJsonString,
+
+      github_instance_type: githubDetails.type,
+      github_instance_urls: JSON.stringify({
+        base_url: githubDetails.base_url,
+        api_url: githubDetails.api_url,
+        terraform_api_url: githubDetails.terraform_api_url,
+        container_registry_url: githubDetails.container_registry_url,
+      }),
+    };
+
+    if (githubDetails.tenant_name) {
+      demoParameters['github_instance_tenant_name'] = githubDetails.tenant_name;
+    }
+
+    const demo_parameters_payload = JSON.stringify(demoParameters);
     setOutput('demo_deployment_demo_parameters_json', demo_parameters_payload);
     setOutput('demo_deployment_demo_parameters_json_b64', Buffer.from(demo_parameters_payload).toString('base64'));
   }

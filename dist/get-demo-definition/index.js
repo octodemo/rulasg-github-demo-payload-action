@@ -38906,7 +38906,64 @@ function createDeploymentStatus(status) {
     };
 }
 //# sourceMappingURL=GitHubDeploymentManager.js.map
+;// CONCATENATED MODULE: ./lib/GitHubResolver.js
+var GitHubType;
+(function (GitHubType) {
+    GitHubType["dotcom"] = "dotcom";
+    GitHubType["ghes"] = "ghes";
+    GitHubType["proxima"] = "proxima";
+    GitHubType["emu"] = "emu";
+})(GitHubType || (GitHubType = {}));
+function resolve(instanceUrl) {
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(instanceUrl);
+    }
+    catch (err) {
+        throw new Error(`Unable to parse provided URL '${instanceUrl}'; ${err.message}`);
+    }
+    const result = {
+        type: GitHubType.dotcom,
+        base_url: 'https://github.com',
+        api_url: 'https://api.github.com',
+        container_registry_url: 'https://ghcr.io',
+        terraform_api_url: 'https://api.github.com/',
+        tenant_name: undefined,
+    };
+    if (parsedUrl.hostname === 'github.com') {
+        // We are on dotcom, but could be an EMU or standard dotcom
+        // if (parsedUrl.pathname?.toLowerCase().startsWith('/enterprises/')) {
+        //   result.type = GitHubType.emu;
+        // }
+        // Unless we do a proper lookup on the EMU enterprise, the above check is not really valid, so need a proper check if this is required going forward
+    }
+    else if (parsedUrl.hostname.endsWith('ghe.com')) {
+        // We have a Proxima tenant
+        result.type = GitHubType.proxima;
+        result.base_url = `https://${parsedUrl.hostname}`;
+        result.api_url = `https://api.${parsedUrl.hostname}`;
+        result.container_registry_url = `https://containers.${parsedUrl.hostname}`;
+        result.terraform_api_url = `${result.api_url}/`;
+        result.tenant_name = parsedUrl.hostname.split('.')[0];
+    }
+    else {
+        // We have a GHES instance
+        result.type = GitHubType.ghes;
+        result.base_url = `${parsedUrl.origin}`;
+        if (parsedUrl.port) {
+            result.base_url += `:${parsedUrl.port}`;
+        }
+        result.api_url = `${result.base_url}/api/v3`;
+        result.terraform_api_url = `${result.api_url}/`;
+        //container registry, needs to be enabled on the GHES instance, it could be disabled, but still provide a value for it
+        result.container_registry_url = `https://containers.${parsedUrl.hostname}`;
+        result.tenant_name = parsedUrl.hostname;
+    }
+    return result;
+}
+//# sourceMappingURL=GitHubResolver.js.map
 ;// CONCATENATED MODULE: ./lib/actions/get-demo-definition.js
+
 
 
 
@@ -38925,6 +38982,8 @@ async function run() {
 run();
 async function exec() {
     const deploymentId = getRequiredInput('deployment_id');
+    const githubUrl = getRequiredInput('github_url');
+    const githubDetails = resolve(githubUrl);
     const octokit = getOctokit(getRequiredInput('github_token'));
     const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
     const demoDeployment = await deploymentManager.getDemoDeploymentById(Number.parseInt(deploymentId));
@@ -38952,15 +39011,26 @@ async function exec() {
         setOutput('demo_deployment_github_repository_owner', repo.owner);
         setOutput('demo_deployment_github_repository_name', repo.repo);
         setOutput('demo_deployment_github_repository_full_name', `${repo.owner}/${repo.repo}`);
-        const demo_parameters_payload = JSON.stringify({
+        const demoParameters = {
             version: demoPayload.version,
             github_repository: repo,
             requestor_handle: demoPayload.actor,
             uuid: demoPayload.uuid,
             communication_issue_number: demoPayload.communicationIssueNumber,
             demo_config_json: JSON.stringify(demoPayload.additionalConfig || {}),
-            demo_definition_json: demoPayload.demoTemplate.asJsonString
-        });
+            demo_definition_json: demoPayload.demoTemplate.asJsonString,
+            github_instance_type: githubDetails.type,
+            github_instance_urls: JSON.stringify({
+                base_url: githubDetails.base_url,
+                api_url: githubDetails.api_url,
+                terraform_api_url: githubDetails.terraform_api_url,
+                container_registry_url: githubDetails.container_registry_url,
+            }),
+        };
+        if (githubDetails.tenant_name) {
+            demoParameters['github_instance_tenant_name'] = githubDetails.tenant_name;
+        }
+        const demo_parameters_payload = JSON.stringify(demoParameters);
         setOutput('demo_deployment_demo_parameters_json', demo_parameters_payload);
         setOutput('demo_deployment_demo_parameters_json_b64', Buffer.from(demo_parameters_payload).toString('base64'));
     }
