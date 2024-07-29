@@ -20,7 +20,7 @@ run();
 
 async function exec() {
   const deploymentId = getRequiredInput('deployment_id');
-  const githubUrl = getRequiredInput('github_url');
+  const githubUrl = getRequiredInput('github_server_url');
 
   const githubDetails = githubResolver.resolve(githubUrl);
 
