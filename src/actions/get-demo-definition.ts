@@ -71,7 +71,7 @@ async function exec() {
       demo_definition_json: demoPayload.demoTemplate.asJsonString,
 
       github_instance_type: githubDetails.type,
-      github_instance_urls: JSON.stringify({
+      github_instance_urls_json: JSON.stringify({
         base_url: githubDetails.base_url,
         api_url: githubDetails.api_url,
         terraform_api_url: githubDetails.terraform_api_url,
