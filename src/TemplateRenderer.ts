@@ -6,7 +6,7 @@ export class TemplateRenderer {
   readonly directory: string;
 
   constructor(directory: string) {
-    this.directory = directory;
+    this.directory = path.normalize(directory);
 
     nunjucks.configure({
       throwOnUndefined: true,

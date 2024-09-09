@@ -47,11 +47,11 @@ async function exec() {
     if (contextVaraiables) {
       const templateRenderer = new TemplateRenderer(templateDirectory);
 
-      for (const templateFile in metadata.framework.templated_files) {
+      metadata.framework.templated_files.forEach(templateFile => {
         const renderedContents = templateRenderer.renderFile(templateFile, contextVaraiables);
         fs.writeFileSync(path.join(templateDirectory, templateFile), renderedContents, 'utf-8');
         core.info(`  successfully rendered template file '${templateFile}'`);
-      }
+      });
     }
   } else {
     core.info(`No templated files found in metadata`);

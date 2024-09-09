@@ -40255,7 +40255,7 @@ var nunjucks = __nccwpck_require__(7006);
 class TemplateRenderer {
     directory;
     constructor(directory) {
-        this.directory = directory;
+        this.directory = external_path_.normalize(directory);
         nunjucks.configure({
             throwOnUndefined: true,
             tags: {
@@ -40324,11 +40324,11 @@ async function exec() {
         }
         if (contextVaraiables) {
             const templateRenderer = new TemplateRenderer(templateDirectory);
-            for (const templateFile in metadata.framework.templated_files) {
+            metadata.framework.templated_files.forEach(templateFile => {
                 const renderedContents = templateRenderer.renderFile(templateFile, contextVaraiables);
                 external_fs_.writeFileSync(external_path_.join(templateDirectory, templateFile), renderedContents, 'utf-8');
                 core.info(`  successfully rendered template file '${templateFile}'`);
-            }
+            });
         }
     }
     else {
