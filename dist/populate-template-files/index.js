@@ -26846,6 +26846,14 @@ module.exports["default"] = exports.default;
 
 /***/ }),
 
+/***/ 2655:
+/***/ ((module) => {
+
+module.exports = eval("require")("src/TemplateRenderer.js");
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -28763,37 +28771,13 @@ var __webpack_exports__ = {};
 (() => {
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var lib_core = __nccwpck_require__(2186);
+var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(7147);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
-;// CONCATENATED MODULE: ./lib/action-utils.js
-
-function getRequiredInput(name) {
-    return core.getInput(name, { required: true });
-}
-function setOutput(name, value) {
-    lib_core.info(`  ${name}: ${value}`);
-    lib_core.setOutput(name, value);
-}
-function getTags(inputName) {
-    const raw = core.getInput(inputName), result = {};
-    if (raw) {
-        const tags = raw.split(',');
-        tags.forEach((tag) => {
-            const parts = tag.split('=');
-            if (parts.length == 2) {
-                result[parts[0].trim()] = parts[1].trim();
-            }
-            else {
-                throw new Error(`Problem in parsing tags. The tag values must be specified in "name=value" pairs to be valid.`);
-            }
-        });
-    }
-    return result;
-}
-//# sourceMappingURL=action-utils.js.map
 ;// CONCATENATED MODULE: ./node_modules/@vinejs/vine/build/chunk-577THMJC.js
 // src/defaults.ts
 var messages = {
@@ -33914,7 +33898,10 @@ class DemoMetadata {
     }
 }
 //# sourceMappingURL=DemoMetadata.js.map
-;// CONCATENATED MODULE: ./lib/actions/get-template-metadata.js
+// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?src/TemplateRenderer.js
+var TemplateRenderer = __nccwpck_require__(2655);
+;// CONCATENATED MODULE: ./lib/actions/populate-template-files.js
+
 
 
 
@@ -33925,47 +33912,51 @@ async function run() {
         await exec();
     }
     catch (err) {
-        lib_core.debug((0,external_util_.inspect)(err));
-        lib_core.setFailed(err);
+        core.debug((0,external_util_.inspect)(err));
+        core.setFailed(err);
     }
 }
 run();
 async function exec() {
-    const templateMetadataPath = lib_core.getInput('template_metadata_file');
+    const templateDirectory = core.getInput('template_directory');
+    const templateMetadataPath = core.getInput('template_metadata_file');
+    const templateVariables = core.getInput('template_variables');
     let metadata;
     try {
         const fileContents = external_fs_.readFileSync(templateMetadataPath, 'utf8');
-        lib_core.debug(`Metadata file contents: ${fileContents}`);
+        core.debug(`Metadata file contents: ${fileContents}`);
         metadata = await parseDemoMetadata(fileContents);
     }
     catch (err) {
-        lib_core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);
+        core.error(`Failed to parse template metadata from '${templateMetadataPath}': ${err.message}`);
         throw err;
     }
-    lib_core.startGroup(`Demo Metadata`);
-    setOutput(`template_name`, metadata.name);
-    setOutput(`template_version`, metadata.version);
-    setOutput(`template_variant`, metadata.variant);
-    setOutput(`templated_files`, metadata.framework.templated_files ? JSON.stringify(metadata.framework.templated_files) : []);
-    setOutput(`has_templated_files`, metadata.framework.templated_files ? metadata.framework.templated_files.length > 0 : false);
-    if (metadata.terraformMetadata) {
-        setOutput(`tf_metadata_json`, JSON.stringify(metadata.terraformMetadata));
-        setOutput('tf_metadata_stack_path', metadata.terraformMetadata.stack_path);
-        outputScriptValue('create_pre', metadata.terraformMetadata?.lifecycle_scripts?.create?.pre);
-        outputScriptValue('create_post', metadata.terraformMetadata?.lifecycle_scripts?.create?.post);
-        outputScriptValue('create_finalize', metadata.terraformMetadata?.lifecycle_scripts?.create?.finalize);
-        outputScriptValue('destroy_pre', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.pre);
-        outputScriptValue('destroy_post', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.post);
-        outputScriptValue('destroy_finalize', metadata.terraformMetadata?.lifecycle_scripts?.destroy?.finalize);
+    core.startGroup(`Demo Metadata`);
+    if (metadata.framework.templated_files && metadata.framework.templated_files.length > 0) {
+        core.info(`Found templated files in metadata: ${JSON.stringify(metadata.framework.templated_files)}`);
+        let contextVaraiables;
+        try {
+            contextVaraiables = JSON.parse(templateVariables);
+        }
+        catch (err) {
+            core.setFailed(`Failed to parse template variables: ${err.message}`);
+            contextVaraiables = undefined;
+        }
+        if (contextVaraiables) {
+            const templateRenderer = new TemplateRenderer.TemplateRenderer(templateDirectory);
+            for (const templateFile in metadata.framework.templated_files) {
+                const renderedContents = templateRenderer.renderFile(templateFile, contextVaraiables);
+                external_fs_.writeFileSync(external_path_.join(templateDirectory, templateFile), renderedContents, 'utf-8');
+                core.info(`  successfully rendered template file '${templateFile}'`);
+            }
+        }
     }
-    lib_core.endGroup();
-}
-function outputScriptValue(name, value) {
-    if (value && value.trim().length > 0) {
-        setOutput(`lifecycle_script_${name}`, value);
+    else {
+        core.info(`No templated files found in metadata`);
     }
+    core.endGroup();
 }
-//# sourceMappingURL=get-template-metadata.js.map
+//# sourceMappingURL=populate-template-files.js.map
 })();
 
 

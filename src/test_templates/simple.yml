@@ -1,0 +1,11 @@
+name: Simple Test
+
+on:
+  push:
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    uses: <$ WORKFLOW_REFERENCE_REPO $>/.github/workflows/test.yml@<$ version $>
+    with:
+      parameter: ${{ secrets.PARAMETER_SECRET }}

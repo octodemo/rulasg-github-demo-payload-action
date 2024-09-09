@@ -31,6 +31,7 @@ const FRAMEWORK_V1_SCHEMA_GROUP = vine.group([
     },
     {
       variant: vine.literal('terraform'),
+      templated_files: vine.array(vine.string()).optional(),
       terraform: TERRAFORM_SCHEMA,
     }
   ),
@@ -40,6 +41,7 @@ const FRAMEWORK_V1_SCHEMA_GROUP = vine.group([
     },
     {
       variant: vine.literal('script'),
+      templated_files: vine.array(vine.string()).optional(),
       script: SCRIPT_SCHEMA,
     }
   ),

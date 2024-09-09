@@ -1,0 +1,21 @@
+name: 'GitHub Demo - Populate Template Files'
+description: Processes the metadata on the demo and then renders the templated files if there are any defined.
+author: 'Peter Murray'
+
+inputs:
+  template_metadata_file:
+    description: The metadata file for the demo template, fully qualified path.
+    required: true
+
+  template_directory:
+    description: The directory to look for the template files in.
+    default: '${{ github.workspace }}/template'
+    required: true
+
+  template_variables:
+    description: The JSON encoded object of the variable names to values to use when rendering the template files.
+    required: true
+
+runs:
+  using: node20
+  main: '../dist/populate-template-files/index.js'

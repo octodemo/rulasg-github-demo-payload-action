@@ -33,10 +33,12 @@ async function exec() {
   setOutput(`template_version`, metadata.version);
 
   setOutput(`template_variant`, metadata.variant);
+  setOutput(`templated_files`, metadata.framework.templated_files ? JSON.stringify(metadata.framework.templated_files) : []);
+  setOutput(`has_templated_files`, metadata.framework.templated_files ? metadata.framework.templated_files.length > 0 : false);
 
   if (metadata.terraformMetadata) {
     setOutput(`tf_metadata_json`, JSON.stringify(metadata.terraformMetadata));
-    setOutput('tf_metadta_stack_path', metadata.terraformMetadata.stack_path);
+    setOutput('tf_metadata_stack_path', metadata.terraformMetadata.stack_path);
 
     outputScriptValue('create_pre', metadata.terraformMetadata?.lifecycle_scripts?.create?.pre);
     outputScriptValue('create_post', metadata.terraformMetadata?.lifecycle_scripts?.create?.post);
