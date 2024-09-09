@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { inspect } from 'util';
 import { DemoMetadata, parseDemoMetadata } from '../demo-metadata/DemoMetadata.js';
-import { TemplateRenderer } from 'src/TemplateRenderer.js';
+import { TemplateRenderer } from '../TemplateRenderer.js';
 
 async function run() {
   try {
