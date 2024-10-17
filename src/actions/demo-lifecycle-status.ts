@@ -1,9 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DEMO_STATES, LIFECYCLE_STATES } from '../constants';
-import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput } from '../util';
+import { DEMO_STATES, LIFECYCLE_STATES } from '../constants.js';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -23,13 +24,14 @@ async function exec() {
     status: getRequiredInput('lifecycle_status')
   };
 
-  const deploymentManager = new GitHubDeploymentManager(github.context.repo, getOctokit(), github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const deploymentManager = new GitHubDeploymentManager(github.context.repo, octokit, github.context.ref);
   const deployment = await deploymentManager.getDemoDeploymentById(inputs.id);
   const currentDeploymentState = await deployment.getCurrentStatus();
 
   if (currentDeploymentState?.state === 'success') {
     const status = validateStatus(inputs.status);
-    const logUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
+    const logUrl = `${process.env.GITHUB_SERVER_URL}/${github.context.repo.owner}/${github.context.repo.repo}/actions/runs/${inputs.run_id}`;
 
     core.info(`Updating demo deployment ${deployment.id} status...`);
     await deploymentManager.updateDeploymentStatus(deployment.id, 'success', status.demoState, logUrl);
@@ -47,7 +49,7 @@ async function exec() {
         await deploymentManager.removeIssueLabels(issueId, ...status.labelsRemove);
       }
 
-      const actor: string | undefined = deployment.payload?.github_context.actor;
+      const actor: string | undefined = deployment.payload?.actor;
       if (status.demoState === DEMO_STATES.marked_warning) {
         await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
       } else if (status.demoState === DEMO_STATES.marked_termination) {

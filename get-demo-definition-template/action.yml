@@ -1,0 +1,26 @@
+name: get-demo-definition-template
+description: Fetches the demo definition template from a deployment
+author: 'Peter Murray'
+
+inputs:
+  github_token:
+    description: The GitHub token to use to validate the provided data
+    default: ${{ github.token }}
+
+  deployment_id:
+    description: The deployment id to get the definition for
+    required: true
+
+  type:
+    description: The type of deployment to get the definition for
+    required: true
+
+outputs:
+  demo_deployment_id:
+    description: The id of the demo deployment
+
+
+
+runs:
+  using: node20
+  main: '../dist/get-demo-definition-template/index.js'

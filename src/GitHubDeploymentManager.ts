@@ -1,7 +1,8 @@
 import { Octokit } from '@octokit/rest';
-import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants';
-import { DemoDeployment } from './DemoDeployment';
-import { DeploymentState, DeploymentStatus, GitHubDeployment, Repository } from './types';
+import { DemoDeployment, GitHubDeploymentData, GitHubDeploymentValidator } from './DemoDeployment.js';
+import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
+import { DemoPayload } from './demo-payload/DemoPayload.js';
+import { DeploymentState, DeploymentStatus, Repository } from './types.js';
 
 export class GitHubDeploymentManager {
 
@@ -17,27 +18,37 @@ export class GitHubDeploymentManager {
     this.ref = ref || 'main';
   }
 
+  getDemoDeploymentForUUID(uuid: string): Promise<DemoDeployment | undefined> {
+    return this.getAllDemoDeployments()
+      .then(deployments => {
+        let matched = deployments?.filter((deployment) => deployment.uuid === uuid)
+        if (matched && matched.length > 0) {
+          return matched[0];
+        }
+      });
+  }
+
   getDeploymentStatus(id: number): Promise<DeploymentStatus | undefined> {
-    //TODO possible pagination issue
-    return this.github.repos.listDeploymentStatuses({
+    return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
       ...this.repo,
       deployment_id: id,
-    }).then(resp => {
-      if (resp.status === 200 && resp.data && resp.data.length > 0) {
-        const status = resp.data[0];
-        return createDeploymentStatus(status);
+      per_page: 100,
+    }).then(statuses => {
+      if (statuses && statuses.length > 0) {
+        //@ts-ignore
+        return createDeploymentStatus(statuses[0]);
       }
       return undefined;
     });
   }
 
   deactivateDeployment(id: number): Promise<boolean> {
-    return this.github.repos.createDeploymentStatus({
+    return this.github.rest.repos.createDeploymentStatus({
       ...this.repo,
       deployment_id: id,
       state: 'inactive',
-      mediaType: {
-        previews: ['ant-man']
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
       }
     }).then(resp => {
       return resp.status === 201;
@@ -45,9 +56,12 @@ export class GitHubDeploymentManager {
   }
 
   deleteDeployment(id: number): Promise<boolean> {
-    return this.github.repos.deleteDeployment({
+    return this.github.rest.repos.deleteDeployment({
       ...this.repo,
       deployment_id: id,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       return resp.status === 204;
     });
@@ -61,14 +75,18 @@ export class GitHubDeploymentManager {
       });
   }
 
-  getEnvironmentDeployments(name: string): Promise<GitHubDeployment[] | undefined> {
-    return this.github.repos.listDeployments({
+  getEnvironmentDeployments(name: string): Promise<DemoDeployment[] | undefined> {
+    return this.github.rest.repos.listDeployments({
       ...this.repo,
       environment: name,
-      task: 'deploy'
+      task: 'deploy',
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       if (resp.status === 200 && resp.data) {
-        return resp.data.map(extractDeployment);
+        //@ts-ignore
+        return Promise.all(resp.data.map((data) => generateDemoDeployment(data, this)));
       }
       return undefined;
     });
@@ -85,23 +103,21 @@ export class GitHubDeploymentManager {
   }
 
   getAllDemoDeployments(): Promise<DemoDeployment[] | undefined> {
-    return this.github.paginate(
-      'GET /repos/{owner}/{repo}/deployments',
-      {
+    return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
         ...this.repo,
         task: DEMO_DEPLOYMENT_TASK,
+        per_page: 100
       }).then(deployments => {
         return this.extractDemoDeploymentsFromResponse(deployments)
       });
   }
 
   getDemoDeployments(name: string): Promise<DemoDeployment[] | undefined> {
-    return this.github.paginate(
-      'GET /repos/{owner}/{repo}/deployments',
-      {
+    return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
         ...this.repo,
         environment: `demo/${name}`,
         task: DEMO_DEPLOYMENT_TASK,
+        per_page: 100
       }).then(deployments => {
         return this.extractDemoDeploymentsFromResponse(deployments)
       });
@@ -118,33 +134,41 @@ export class GitHubDeploymentManager {
   }
 
   getDemoDeploymentById(id: number): Promise<DemoDeployment> {
-    return this.github.repos.getDeployment({
+    return this.github.rest.repos.getDeployment({
       ...this.repo,
       deployment_id: id,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       if (resp.data.task !== DEMO_DEPLOYMENT_TASK) {
         throw new Error(`The deployment for id ${id} is not a valid demo deployment type`);
       }
-      return this.extractDemoDeployment(resp.data);
+      return generateDemoDeployment(resp.data, this);
     });
   }
 
-  createDemoDeployment(name: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
-    return this.github.repos.createDeployment({
+  // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
+  createDemoDeployment(demo: DemoPayload): Promise<DemoDeployment> {
+    return this.github.rest.repos.createDeployment({
       ...this.repo,
       ref: this.ref,
       task: DEMO_DEPLOYMENT_TASK,
       auto_merge: false,
       required_contexts: [],
-      environment: `demo/${name}`,
-      payload: payload,
-      description: 'Tracking deployment for demo metadata',
+      environment: `demo/${demo.repository.owner}/${demo.repository.repo}`,
+      payload: demo.asJsonString,
+      description: `${demo.uuid}`,
       transient_environment: true,
-      mediaType: {
-        previews: ['ant-man'],
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
       },
     }).then(result => {
-      return this.extractDemoDeployment(result.data);
+      if (result.status === 201) {
+        return generateDemoDeployment(result.data, this);
+      } else {
+        throw new Error(`Invalid status response ${result.status} when creating deployment`);
+      }
     });
   }
 
@@ -167,8 +191,8 @@ export class GitHubDeploymentManager {
       state: state,
       auto_inactive: true,
       description: description ?? '',
-      mediaType: {
-        previews: ['ant-man', 'flash'],
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
       },
     };
 
@@ -176,7 +200,7 @@ export class GitHubDeploymentManager {
       payload['log_url'] = logUrl;
     }
 
-    return this.github.repos.createDeploymentStatus(payload)
+    return this.github.rest.repos.createDeploymentStatus(payload)
       .then(resp => {
         if (resp.status !== 201) {
           throw new Error(`Failed to create deployment status, unexpected status code; ${resp.status}`);
@@ -186,10 +210,13 @@ export class GitHubDeploymentManager {
   }
 
   getIssueLabels(issueId: number): Promise<string[]> {
-    return this.github.issues.listLabelsOnIssue({
+    return this.github.rest.issues.listLabelsOnIssue({
       ...this.repo,
       issue_number: issueId,
-      per_page: 100
+      per_page: 100,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       return resp.data.map(label => label.name);
     }).catch(() => {
@@ -198,10 +225,13 @@ export class GitHubDeploymentManager {
   }
 
   addIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
-    return this.github.issues.addLabels({
+    return this.github.rest.issues.addLabels({
       ...this.repo,
       issue_number: issueId,
-      labels: label
+      labels: label,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       if (resp.status === 200) {
         return true;
@@ -217,10 +247,13 @@ export class GitHubDeploymentManager {
     const promises: Promise<boolean>[] = [];
 
     label.forEach(label => {
-      const promise = this.github.issues.removeLabel({
+      const promise = this.github.rest.issues.removeLabel({
         ...this.repo,
         issue_number: issueId,
-        name: label
+        name: label,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
       })
         .catch(err => {
           // Ignore errors that prove the label is not there
@@ -240,49 +273,38 @@ export class GitHubDeploymentManager {
   }
 
   addIssueComment(id: number, comment: string): Promise<boolean> {
-    return this.github.issues.createComment({
+    return this.github.rest.issues.createComment({
       ...this.repo,
       issue_number: id,
       body: comment,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
     }).then(resp => {
       return resp.status === 201;
     });
   }
 
-  private extractDemoDeploymentsFromResponse(resp): DemoDeployment[] | undefined {
+  private async extractDemoDeploymentsFromResponse(resp: any[]): Promise<DemoDeployment[] | undefined> {
+    const manager = this;
+
     if (resp && resp.length > 0) {
-      const results: DemoDeployment[] = [];
-      resp.forEach(demo => {
-        results.push(this.extractDemoDeployment(demo));
-      });
+      const results = await Promise.all(resp.map((data) => {return generateDemoDeployment(data, manager)}));
       return results;
     }
     return undefined;
   }
-
-  private extractDemoDeployment(deployment: { [key: string]: any }) {
-    return new DemoDeployment(extractDeployment(deployment), this);
-  }
 }
 
-
-function extractDeployment(deployment: { [key: string]: any }): GitHubDeployment {
-  // @ts-ignore
-  const result: GitHubDeployment = {};
-  ['id', 'node_id', 'created_at', 'updated_at', 'description', 'ref', 'task', 'environment'].forEach(key => {
-    result[key] = deployment[key];
-  });
-
-  if (deployment.payload) {
-    if (typeof deployment.payload === 'string' || deployment.payload instanceof String) {
-      //@ts-ignore
-      result.payload = JSON.parse(deployment.payload);
-    } else {
-      result.payload = deployment.payload;
-    }
-  }
-
-  return result;
+async function generateDemoDeployment(deployment: GitHubDeploymentData, manager: GitHubDeploymentManager): Promise<DemoDeployment> {
+  //TODO could use Vine definition here to validate the payload
+  try {
+    const payload = await GitHubDeploymentValidator.validate(deployment);
+    return new DemoDeployment(payload, manager);
+  } catch (err: any) {
+    //TODO need to extract the parsing error from VineJS
+    throw err;
+  };
 }
 
 function createDeploymentStatus(status: { [key: string]: any }): DeploymentStatus {

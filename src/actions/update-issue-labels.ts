@@ -1,8 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { GitHubDeploymentManager } from '../GitHubDeploymentManager';
-import { getOctokit, getRequiredInput } from '../util';
+import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -25,7 +26,8 @@ async function exec(): Promise<void> {
   } else {
     const repo = getRepository()
       , issueNumber: number =  getIssueNumber()
-      , manager = new GitHubDeploymentManager(repo, getOctokit())
+      , octokit = getOctokit(getRequiredInput('github_token'))
+      , manager = new GitHubDeploymentManager(repo, octokit)
       ;
 
     core.info(`Updating labels for issue: ${issueNumber}`);

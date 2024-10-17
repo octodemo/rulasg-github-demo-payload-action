@@ -1,8 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DemoDeploymentReview, DemoReview } from '../DemoDeploymentReview';
-import { getOctokit, getRequiredInput } from '../util';
+import { DemoDeploymentReview, DemoReview } from '../DemoDeploymentReview.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -19,7 +20,8 @@ async function exec() {
   const warningActiveDays: number = parseInt(getRequiredInput('warn_active_days'));
   const maxActiveDays: number = parseInt(getRequiredInput('terminate_active_days'));
 
-  const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
   const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
 
   core.info(`Demo deployment analysis`);
@@ -95,6 +97,6 @@ function displayDemoReview(review: DemoReview) {
     if (review.issue.labels) {
       core.info(`    labels: ${JSON.stringify(review.issue.labels)}`);
     }
-    core.info(`    url: https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/issues/${review.issue.id}`);
+    core.info(`    url: ${process.env.GITHUB_SERVER_URL}/${github.context.repo.owner}/${github.context.repo.repo}/issues/${review.issue.id}`);
   }
 }

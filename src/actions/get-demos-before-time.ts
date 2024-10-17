@@ -1,9 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
-import { DemoDeployment } from '../DemoDeployment';
-import { DemoDeploymentReview } from '../DemoDeploymentReview';
-import { getOctokit, getRequiredInput } from '../util';
+import { DemoDeployment } from '../DemoDeployment.js';
+import { DemoDeploymentReview } from '../DemoDeploymentReview.js';
+import { getOctokit } from '../util.js';
+import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -18,7 +19,8 @@ run();
 
 async function exec() {
   const beforeDate: Date = new Date(getRequiredInput('before'));
-  const demoReview = await DemoDeploymentReview.createDemoReview(getOctokit(), github.context.repo, github.context.ref);
+  const octokit = getOctokit(getRequiredInput('github_token'));
+  const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
 
   const allDeployments = await demoReview.getAllDemoDeployments();
 
@@ -26,7 +28,7 @@ async function exec() {
 
   core.startGroup('Deploy Deployments');
   allDeployments.forEach(async (deployment) => {
-    const createdDate = new Date(deployment.getCreatedAt());
+    const createdDate = new Date(deployment.createdAt);
     if (createdDate.getTime() < beforeDate.getTime()) {
       results.push(deployment);
       await displayDeployment(deployment);
@@ -47,7 +49,7 @@ async function displayDeployment(deployment: DemoDeployment) {
 
   core.info(`-------------------------------------------------------------------`);
   core.info(`${deployment.name} id:${deployment.id}`);
-  core.info(`  created:        ${deployment.getCreatedAt()}`);
+  core.info(`  created:        ${deployment.createdAt}`);
   core.info(`  state:          ${status?.state}`);
   core.info(`  environment:    ${status?.environment}`);
   core.info(`  status created: ${status?.created_at}`);

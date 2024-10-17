@@ -1,6 +1,6 @@
-name: 'GitHub Demo Definition'
+name: Create and reserve Demo
 description: Builds a demo definition providing it as outputs and registers a deployment to track the demo lifecycle.
-author: 'Peter Murray'
+author: Peter Murray
 
 inputs:
   github_token:
@@ -8,18 +8,17 @@ inputs:
     default: ${{ github.token }}
     required: true
 
-  template_repository_owner:
-    description: The demo template repository owner
-    default: octodemo
+  github_template_token:
+    description: The GitHub token to use to validate a repository or container template
+    default: ${{ github.token }}
     required: true
 
-  template_repository_name:
-    description: The demo template repository name
+  uuid:
+    description: A UUID for the demo request, this is the unique identifier for the demo
     required: true
 
-  template_repository_ref:
-    description: The demo template repository branch ref for the automation files and definitions
-    default: main
+  template_data:
+    description: The JSON encoded data for the template reference, supports container and repository references
     required: true
 
   repository_owner:
@@ -27,25 +26,20 @@ inputs:
     default: octodemo
     required: true
 
-  repository_name:
-    description: The name of the demo repository to create
+  potential_repository_names:
+    description: The names provided for the repository to be created, one or more strings separated by
     required: true
 
   user:
     description: The user that is requesting the demo
     required: false
 
-  issue_id:
-    description: An Issue id that is tracking the lifecycle of the demo repository. This is optional
+  issue_number:
+    description: An Issue number that is tracking the lifecycle of the demo repository. This is optional
     required: false
 
-  demo_config:
-    description: A JSON payload (encoded as a string) of demo custom configuration details, optional.
-    required: false
-
-  prevent_duplicates:
-    description: Prevent duplicate demo instances from being created, i.e. fail early
-    default: true
+  demo_config_data:
+    description: A JSON payload (encoded as a string) of demo custom configuration details, optional, all keys in camel case.
     required: false
 
   tags:
@@ -65,6 +59,9 @@ outputs:
 
   template_repository_ref:
     description: The branch reference for the template repository
+
+  template_repository_directory_path:
+    description: The path to the template repository directory
 
   repository_full_name:
     description: The full name of the repository to be created
@@ -93,7 +90,13 @@ outputs:
   demo_deployment_id:
     description: The id of the deployment used to track the metadata from the demo and resources.
 
+  demo_deployment_name:
+    description: The name of the demo deployment being used to track the metadata demo and resources.
+
+  demo_deployment_uuid:
+    description: The UUID that uniquely defines the demo request and resources.
+
 
 runs:
   using: node20
-  main: './dist/create-demo-definition/index.js'
+  main: '../dist/create-and-reserve-demo/index.js'

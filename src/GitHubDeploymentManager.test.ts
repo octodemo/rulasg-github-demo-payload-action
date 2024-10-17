@@ -1,12 +1,11 @@
 import { Octokit } from '@octokit/rest';
-import { expect } from 'chai';
+import { describe, beforeAll, beforeEach, afterAll, afterEach, it, expect } from 'vitest';
+// import { expect } from 'chai';
 import { GitHubDeploymentManager } from './GitHubDeploymentManager';
 import { Repository } from './types';
 import { getOctokit, getRepository } from './util';
 
 describe('DeploymentManager', function () {
-
-  this.timeout(10000);
 
   let deploymentManager: GitHubDeploymentManager;
 
@@ -14,7 +13,7 @@ describe('DeploymentManager', function () {
 
   let repo: Repository;
 
-  before(() => {
+  beforeAll(() => {
     octokit = getOctokit();
     repo = getRepository();
 
@@ -28,11 +27,11 @@ describe('DeploymentManager', function () {
 
     let environment;
 
-    before('initialize environment', async () => {
+    beforeAll(async () => {
       environment = await createEnvironmentDeployment('octodemo/pm-automation-001');
     });
 
-    after('remove test environment', async () => {
+    afterAll(async () => {
       if (environment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
@@ -145,13 +144,15 @@ describe('DeploymentManager', function () {
 
     const DEPLOYMENT_NAME = 'test-demo-deployment'
 
+    const UUID = '4129d60f-db50-4227-a404-c2f4416623cd';
+
     let deployment;
 
-    before('initialize test deployment', async () => {
-      deployment = await deploymentManager.createDemoDeployment(DEPLOYMENT_NAME, { name: 'value' });
+    beforeAll(async () => {
+      deployment = await deploymentManager.createDemoDeployment(DEPLOYMENT_NAME, UUID, { name: 'value' });
     });
 
-    after('remove test deployemnt', async () => {
+    afterAll(async () => {
       if (deployment) {
         // The tests could have already removed it, so do not fail on a 404
         try {
@@ -170,6 +171,14 @@ describe('DeploymentManager', function () {
     function getDeploymentName(): string {
       return deployment.environment;
     }
+
+    describe('#getDemoDeploymentForUUID()', () => {
+
+      it('should fetch and existing UUID', async () => {
+        const deployment = await deploymentManager.getDemoDeploymentForUUID(UUID);
+        expect(deployment?.uuid).to.equal(UUID);
+      });
+    });
 
     describe('#updateDeploymentStatus()', () => {
       it('should update the status', async () => {
@@ -206,6 +215,7 @@ describe('DeploymentManager', function () {
         const result = await deploymentManager.getDemoDeployment(name);
         expect(result).to.have.property('id').to.equal(deployment.id);
         expect(result).to.have.property('environment').to.equal(getDeploymentName());
+        expect(result?.uuid).to.equal(UUID);
       });
 
       // it('should get an existing demo deployment', async () => {
