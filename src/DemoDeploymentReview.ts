@@ -105,14 +105,20 @@ export class DemoDeploymentReview {
   }
 
   private async loadDemoReviews(): Promise<DemoReview[]> {
-    return this.getAllDemoDeployments()
-      .then(demos => {
-        const promises: Promise<DemoReview>[] = [];
-        demos?.forEach(demo => {
-          promises.push(this.generateDemoReview(demo));
-        });
-        return Promise.all(promises);
-      });
+    const demos = await this.getAllDemoDeployments()
+    if(!demos) {
+      return [];
+    }
+
+    const demoReviews: DemoReview[] = [];
+
+    // We handle this sequentially, as we risk running into secondary rate limits if we don't
+    for (const demo of demos) {
+      const review = await this.generateDemoReview(demo);
+      demoReviews.push(review);
+    }
+
+    return demoReviews;
   }
 
   private async generateDemoReview(demo: DemoDeployment): Promise<DemoReview> {

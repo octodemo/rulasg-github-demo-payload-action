@@ -34,6 +34,8 @@ export class DemoDeployment {
 
   private demoPayload: DemoPayload | undefined;
 
+  private cachedStatus: DeploymentStatus | undefined;
+
   constructor(data: GitHubDeploymentData, deploymentManager: GitHubDeploymentManager) {
     if (data.task !== DEMO_DEPLOYMENT_TASK) {
       throw new Error(`Invalid payload type ${data.task}`);
@@ -87,8 +89,11 @@ export class DemoDeployment {
     return this.demoPayload;
   }
 
-  getCurrentStatus(): Promise<DeploymentStatus | undefined> {
-    return this.deploymentManager.getDeploymentStatus(this.id);
+  async getCurrentStatus(): Promise<DeploymentStatus | undefined> {
+    if (!this.cachedStatus) {
+      this.cachedStatus = await this.deploymentManager.getDeploymentStatus(this.id);
+    }
+    return this.cachedStatus;
   }
 
   getTrackingIssue(): number | undefined {
