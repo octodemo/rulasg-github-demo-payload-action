@@ -1,9 +1,9 @@
 import { Octokit } from '@octokit/rest';
-import { describe, beforeAll, beforeEach, afterAll, afterEach, it, expect } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 // import { expect } from 'chai';
-import { GitHubDeploymentManager } from './GitHubDeploymentManager';
-import { Repository } from './types';
-import { getOctokit, getRepository } from './util';
+import { GitHubDeploymentManager } from '../../src/GitHubDeploymentManager';
+import { Repository } from '../../src/types';
+import { getOctokit, getRepository } from '../../src/util';
 
 describe('DeploymentManager', function () {
 

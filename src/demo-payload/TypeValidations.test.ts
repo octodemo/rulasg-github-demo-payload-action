@@ -9,8 +9,9 @@ describe('DemoPayload', () => {
     it ('should validate a repository template definition', async () => {
       const payload = {
         version: 1,
+        uuid: 'test-uuid',
 
-        demo_template_definition: {
+        demo_definition: {
           type: 'repository',
           template: {
             owner: 'owner',
@@ -34,6 +35,7 @@ describe('DemoPayload', () => {
     it ('should validate a container template definition', async () => {
       const payload = {
         version: 1,
+        uuid: 'test-uuid',
 
         demo_definition: {
           type: 'container',

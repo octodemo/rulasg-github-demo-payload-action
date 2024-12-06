@@ -1,50 +1,77 @@
-import { Octokit } from '@octokit/rest';
-import { describe, it, expect, beforeAll } from 'vitest';
-// import { expect } from 'chai';
-import { AnalysisResults, DemoDeploymentReview } from './DemoDeploymentReview';
-import { Repository } from './types';
-import { getOctokit, getRepository } from './util';
+import { describe, expect, it } from 'vitest';
+import { createMockDeployment } from '../test/moctokit/DeploymentMockFactory.js';
+import { createMockDeploymentStatus } from '../test/moctokit/DeploymentStatusMockFactory.js';
+import { createMocktokit } from '../test/moctokit/Mocktokit.js';
+import { DemoDeploymentReview } from './DemoDeploymentReview.js';
 
-describe('DeploymentManager', () => {
+describe('DemoDeploymentReview', () => {
+  describe("createDemoReview()", async () => {
+    it('throws if returned deployment has different task than "demo:deployment"', async () => {
+      const moctokit = createMocktokit();
+      moctokit.paginateCalledWith("GET /repos/{owner}/{repo}/deployments").mockResolvedValueOnce( [createMockDeployment({ task: 'not-a-demo' })]);
 
-  let deploymentReview: DemoDeploymentReview;
-
-  let octokit: Octokit;
-
-  let repo: Repository;
-
-  beforeAll(async () => {
-    octokit = getOctokit();
-    repo = getRepository();
-
-    deploymentReview = await DemoDeploymentReview.createDemoReview(octokit, repo);
+      await expect(DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' })).rejects.toThrow("Invalid payload type not-a-demo");
+    });
   });
 
-  it('should generate an analysis', async () => {
-    const analysis: AnalysisResults = await deploymentReview.analyze();
+  describe("getAllDemos", async () => {
+    it('returns all demos from API().', async () => {
+      const moctokit = createMocktokit();
+      moctokit.paginate.mockResolvedValueOnce( [createMockDeployment(), createMockDeployment()]);
 
-    expect(analysis).to.have.property('processed').to.have.length.greaterThan(0);
 
-    console.log(`Errored`);
-    analysis.errored.forEach(review => {
-      console.log(`  ${review.demo.name} id:${review.demo.id}`);
-      console.log(`  status: ${JSON.stringify(review.status)}`);
+      const demoDeploymentReview = await DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' });
+
+      const results = await demoDeploymentReview.getAllDemoDeployments();
+
+      expect(results).toBeDefined();
+      expect(results).toHaveLength(2);
     });
 
-    console.log(`Warnings`);
-    analysis.to_warn.forEach(review => {
-      console.log(`  ${review.demo.name} id:${review.demo.id}`);
-      console.log(`  active days: ${review.days_in_state}`);
+    it('loads all deployments in the constructors and caches the results after.', async () => {
+      const moctokit = createMocktokit();
+      moctokit.paginate.mockResolvedValueOnce( [createMockDeployment(), createMockDeployment()]);
+
+      const demoDeploymentReview = await DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' });
+
+      expect(moctokit.paginate).toBeCalledTimes(1);
+      await demoDeploymentReview.getAllDemoDeployments();
+      expect(moctokit.paginate).toBeCalledTimes(1);
+    });
+  });
+
+  describe("analyze()", async () => {
+    it('returns empty results if no deployments are returned', async () => {
+      const moctokit = createMocktokit();
+      moctokit.paginate.mockResolvedValueOnce( []);
+
+      const demoDeploymentReview = await DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' });
+
+      const results = await demoDeploymentReview.analyze();
+
+      expect(results.errored).toHaveLength(0);
+      expect(results.on_hold).toHaveLength(0);
+      expect(results.processed).toHaveLength(0);
+      expect(results.to_terminate).toHaveLength(0);
     });
 
-    console.log(`On hold`);
-    analysis.on_hold.forEach(review => {
-      console.log(`  ${review.demo.name} id:${review.demo.id}`);
-      console.log(`  active days: ${review.days_in_state}`);
+    it('correctly identifies demos on hold', async () => {
+      const moctokit = createMocktokit();
+      const demoDeployment = createMockDeployment({ task: 'demo:deployment' });
+
+      moctokit.paginateCalledWith("GET /repos/{owner}/{repo}/deployments").mockResolvedValueOnce([demoDeployment]);
+
+      moctokit.rest.repos.getDeployment.mockResolvedValueOnce({ data: demoDeployment, headers: {}, status: 200, url: '' });
+
+      moctokit.paginateCalledWith("GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses").mockResolvedValue([createMockDeploymentStatus({ description: 'demo::lifecycle_hold' })]);
+
+      const demoDeploymentReview = await DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' });
+
+      const results = await demoDeploymentReview.analyze();
+
+      expect(results.on_hold).toHaveLength(1);
+      expect(results.on_hold[0].demo.id).toBe(demoDeployment.id);
     });
-
-
-    console.log(`Processed: ${analysis.processed.length}`);
   });
 
 });
