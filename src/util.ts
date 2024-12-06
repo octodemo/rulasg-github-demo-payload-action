@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Octokit } from '@octokit/rest';
 
@@ -32,8 +33,10 @@ export function getOctokit(token?: string): Octokit {
   let octokitToken: string;
 
   if (!token || token.trim().length === 0) {
+    core.info('[Octokit Init] No token provided, using GITHUB_TOKEN');
     octokitToken = getGitHubToken();
   } else {
+    core.info('[Octokit Init] Using provided token');
     octokitToken = token;
   }
 
@@ -48,7 +51,7 @@ export function getRepository() {
   let repoName = process.env['GITHUB_REPO_NAME'];
 
   return {
-    owner: repoOwner || 'peter-murray',
+    owner: repoOwner || 'octodemo-resources',
     repo: repoName || 'github-demo-payload-action',
   };
 }

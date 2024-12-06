@@ -38097,6 +38097,7 @@ const LIFECYCLE_STATES = {
 //# sourceMappingURL=constants.js.map
 ;// CONCATENATED MODULE: ./lib/util.js
 
+
 function getGitHubToken() {
     //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
     // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
@@ -38115,9 +38116,11 @@ function getGitHubToken() {
 function getOctokit(token) {
     let octokitToken;
     if (!token || token.trim().length === 0) {
+        lib_core.info('[Octokit Init] No token provided, using GITHUB_TOKEN');
         octokitToken = getGitHubToken();
     }
     else {
+        lib_core.info('[Octokit Init] Using provided token');
         octokitToken = token;
     }
     //@ts-ignore
@@ -38127,7 +38130,7 @@ function getRepository() {
     let repoOwner = process.env['GITHUB_REPO_OWNER'];
     let repoName = process.env['GITHUB_REPO_NAME'];
     return {
-        owner: repoOwner || 'peter-murray',
+        owner: repoOwner || 'octodemo-resources',
         repo: repoName || 'github-demo-payload-action',
     };
 }
@@ -38619,6 +38622,7 @@ class DemoDeployment {
 ;// CONCATENATED MODULE: ./lib/GitHubDeploymentManager.js
 
 
+
 class GitHubDeploymentManager {
     github;
     repo;
@@ -38638,6 +38642,7 @@ class GitHubDeploymentManager {
         });
     }
     getDeploymentStatus(id) {
+        lib_core.info(`Fetching deployment status for ${id}`);
         return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
             ...this.repo,
             deployment_id: id,
@@ -38651,6 +38656,7 @@ class GitHubDeploymentManager {
         });
     }
     deactivateDeployment(id) {
+        lib_core.info(`Deactivating deployment ${id}`);
         return this.github.rest.repos.createDeploymentStatus({
             ...this.repo,
             deployment_id: id,
@@ -38663,6 +38669,7 @@ class GitHubDeploymentManager {
         });
     }
     deleteDeployment(id) {
+        lib_core.info(`Deleting deployment ${id}`);
         return this.github.rest.repos.deleteDeployment({
             ...this.repo,
             deployment_id: id,
@@ -38681,6 +38688,7 @@ class GitHubDeploymentManager {
         });
     }
     getEnvironmentDeployments(name) {
+        lib_core.info(`Listing deployments for ${this.repo.owner}/${this.repo.repo} with environment ${name}`);
         return this.github.rest.repos.listDeployments({
             ...this.repo,
             environment: name,
@@ -38706,15 +38714,18 @@ class GitHubDeploymentManager {
         });
     }
     getAllDemoDeployments() {
+        lib_core.info(`Fetching all deployments for ${this.repo.owner}/${this.repo.repo}`);
         return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
             task: DEMO_DEPLOYMENT_TASK,
             per_page: 100
         }).then(deployments => {
+            lib_core.info(`Found ${deployments.length} deployments. Extracting deployments from response...`);
             return this.extractDemoDeploymentsFromResponse(deployments);
         });
     }
     getDemoDeployments(name) {
+        lib_core.info(`Fetching deployments for ${this.repo.owner}/${this.repo.repo} with environment ${name}`);
         return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
             ...this.repo,
             environment: `demo/${name}`,
@@ -38734,6 +38745,7 @@ class GitHubDeploymentManager {
         });
     }
     getDemoDeploymentById(id) {
+        lib_core.info(`Fetching deployment for ${this.repo.owner}/${this.repo.repo} with id ${id}`);
         return this.github.rest.repos.getDeployment({
             ...this.repo,
             deployment_id: id,
@@ -38749,6 +38761,7 @@ class GitHubDeploymentManager {
     }
     // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
     createDemoDeployment(demo) {
+        lib_core.info(`Creating deployment for ${this.repo.owner}/${this.repo.repo} with payload uuid ${demo.uuid}`);
         return this.github.rest.repos.createDeployment({
             ...this.repo,
             ref: this.ref,
@@ -38794,6 +38807,7 @@ class GitHubDeploymentManager {
         if (logUrl) {
             payload['log_url'] = logUrl;
         }
+        lib_core.info(`Updating deployment status for ${id} to ${state}`);
         return this.github.rest.repos.createDeploymentStatus(payload)
             .then(resp => {
             if (resp.status !== 201) {
@@ -38803,6 +38817,7 @@ class GitHubDeploymentManager {
         });
     }
     getIssueLabels(issueId) {
+        lib_core.info(`Listing labels for issue ${issueId}`);
         return this.github.rest.issues.listLabelsOnIssue({
             ...this.repo,
             issue_number: issueId,
@@ -38817,6 +38832,7 @@ class GitHubDeploymentManager {
         });
     }
     addIssueLabels(issueId, ...label) {
+        lib_core.info(`Adding labels [${label.join(',')}] to issue ${issueId}`);
         return this.github.rest.issues.addLabels({
             ...this.repo,
             issue_number: issueId,
@@ -38838,6 +38854,7 @@ class GitHubDeploymentManager {
     }
     removeIssueLabels(issueId, ...label) {
         const promises = [];
+        lib_core.info(`Removing labels [${label.join(',')}] from issue ${issueId}`);
         label.forEach(label => {
             const promise = this.github.rest.issues.removeLabel({
                 ...this.repo,
@@ -38862,6 +38879,7 @@ class GitHubDeploymentManager {
         });
     }
     addIssueComment(id, comment) {
+        lib_core.info(`Adding comment to issue ${id}`);
         return this.github.rest.issues.createComment({
             ...this.repo,
             issue_number: id,

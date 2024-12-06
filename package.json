@@ -1,7 +1,7 @@
 {
   "name": "github-demo-payload-action",
   "version": "2.0.0",
-  "description": "",
+  "description": "All actions for the Octodemo Framework.",
   "type": "module",
   "private": true,
   "scripts": {
@@ -27,15 +27,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peter-murray/github-demo-payload-action.git"
+    "url": "git+https://github.com/octodemo-resources/github-demo-payload-action.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/peter-murray/github-demo-payload-action/issues"
+    "url": "https://github.com/octodemo-resources/github-demo-payload-action/issues"
   },
-  "homepage": "https://github.com/peter-murray/github-demo-payload-action#readme",
+  "homepage": "https://github.com/octodemo-resources/github-demo-payload-action#readme",
   "engines": {
     "node": ">=20"
   },

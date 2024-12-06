@@ -33028,6 +33028,7 @@ var external_util_ = __nccwpck_require__(3837);
 var lib_github = __nccwpck_require__(5438);
 ;// CONCATENATED MODULE: ./lib/util.js
 
+
 function getGitHubToken() {
     //TODO this needs reviw of all use cases, as the environment overrides the input value, whilst it is a sensible
     // default and will work for tests it does not seem correct when straddling GitHub enterprises/organizations/deployments
@@ -33046,9 +33047,11 @@ function getGitHubToken() {
 function getOctokit(token) {
     let octokitToken;
     if (!token || token.trim().length === 0) {
+        core.info('[Octokit Init] No token provided, using GITHUB_TOKEN');
         octokitToken = getGitHubToken();
     }
     else {
+        core.info('[Octokit Init] Using provided token');
         octokitToken = token;
     }
     //@ts-ignore
@@ -33058,7 +33061,7 @@ function getRepository() {
     let repoOwner = process.env['GITHUB_REPO_OWNER'];
     let repoName = process.env['GITHUB_REPO_NAME'];
     return {
-        owner: repoOwner || 'peter-murray',
+        owner: repoOwner || 'octodemo-resources',
         repo: repoName || 'github-demo-payload-action',
     };
 }

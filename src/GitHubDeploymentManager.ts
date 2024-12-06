@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import { Octokit } from '@octokit/rest';
 import { DemoDeployment, GitHubDeploymentData, GitHubDeploymentValidator } from './DemoDeployment.js';
 import { DEMO_DEPLOYMENT_TASK, DEMO_STATES } from './constants.js';
@@ -29,6 +30,7 @@ export class GitHubDeploymentManager {
   }
 
   getDeploymentStatus(id: number): Promise<DeploymentStatus | undefined> {
+    core.info(`Fetching deployment status for ${id}`);
     return this.github.paginate('GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses', {
       ...this.repo,
       deployment_id: id,
@@ -43,6 +45,7 @@ export class GitHubDeploymentManager {
   }
 
   deactivateDeployment(id: number): Promise<boolean> {
+    core.info(`Deactivating deployment ${id}`);
     return this.github.rest.repos.createDeploymentStatus({
       ...this.repo,
       deployment_id: id,
@@ -56,6 +59,7 @@ export class GitHubDeploymentManager {
   }
 
   deleteDeployment(id: number): Promise<boolean> {
+    core.info(`Deleting deployment ${id}`);
     return this.github.rest.repos.deleteDeployment({
       ...this.repo,
       deployment_id: id,
@@ -76,6 +80,7 @@ export class GitHubDeploymentManager {
   }
 
   getEnvironmentDeployments(name: string): Promise<DemoDeployment[] | undefined> {
+    core.info(`Listing deployments for ${this.repo.owner}/${this.repo.repo} with environment ${name}`);
     return this.github.rest.repos.listDeployments({
       ...this.repo,
       environment: name,
@@ -103,16 +108,19 @@ export class GitHubDeploymentManager {
   }
 
   getAllDemoDeployments(): Promise<DemoDeployment[] | undefined> {
+    core.info(`Fetching all deployments for ${this.repo.owner}/${this.repo.repo}`);
     return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
         ...this.repo,
         task: DEMO_DEPLOYMENT_TASK,
         per_page: 100
       }).then(deployments => {
+        core.info(`Found ${deployments.length} deployments. Extracting deployments from response...`);
         return this.extractDemoDeploymentsFromResponse(deployments)
       });
   }
 
   getDemoDeployments(name: string): Promise<DemoDeployment[] | undefined> {
+    core.info(`Fetching deployments for ${this.repo.owner}/${this.repo.repo} with environment ${name}`);
     return this.github.paginate('GET /repos/{owner}/{repo}/deployments', {
         ...this.repo,
         environment: `demo/${name}`,
@@ -134,6 +142,7 @@ export class GitHubDeploymentManager {
   }
 
   getDemoDeploymentById(id: number): Promise<DemoDeployment> {
+    core.info(`Fetching deployment for ${this.repo.owner}/${this.repo.repo} with id ${id}`);
     return this.github.rest.repos.getDeployment({
       ...this.repo,
       deployment_id: id,
@@ -150,6 +159,7 @@ export class GitHubDeploymentManager {
 
   // createDemoDeployment(name: string, uuid: string, payload: { [key: string]: any }): Promise<DemoDeployment> {
   createDemoDeployment(demo: DemoPayload): Promise<DemoDeployment> {
+    core.info(`Creating deployment for ${this.repo.owner}/${this.repo.repo} with payload uuid ${demo.uuid}`);
     return this.github.rest.repos.createDeployment({
       ...this.repo,
       ref: this.ref,
@@ -200,6 +210,7 @@ export class GitHubDeploymentManager {
       payload['log_url'] = logUrl;
     }
 
+    core.info(`Updating deployment status for ${id} to ${state}`);
     return this.github.rest.repos.createDeploymentStatus(payload)
       .then(resp => {
         if (resp.status !== 201) {
@@ -210,6 +221,7 @@ export class GitHubDeploymentManager {
   }
 
   getIssueLabels(issueId: number): Promise<string[]> {
+    core.info(`Listing labels for issue ${issueId}`);
     return this.github.rest.issues.listLabelsOnIssue({
       ...this.repo,
       issue_number: issueId,
@@ -225,6 +237,7 @@ export class GitHubDeploymentManager {
   }
 
   addIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
+    core.info(`Adding labels [${label.join(',')}] to issue ${issueId}`);
     return this.github.rest.issues.addLabels({
       ...this.repo,
       issue_number: issueId,
@@ -246,6 +259,7 @@ export class GitHubDeploymentManager {
   removeIssueLabels(issueId: number, ...label: string[]): Promise<boolean> {
     const promises: Promise<boolean>[] = [];
 
+    core.info(`Removing labels [${label.join(',')}] from issue ${issueId}`);
     label.forEach(label => {
       const promise = this.github.rest.issues.removeLabel({
         ...this.repo,
@@ -273,6 +287,7 @@ export class GitHubDeploymentManager {
   }
 
   addIssueComment(id: number, comment: string): Promise<boolean> {
+    core.info(`Adding comment to issue ${id}`);
     return this.github.rest.issues.createComment({
       ...this.repo,
       issue_number: id,

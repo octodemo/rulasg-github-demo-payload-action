@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { getRequiredInput } from '../action-utils.js';
 import { DemoDeploymentReview, DemoReview } from '../DemoDeploymentReview.js';
 import { getOctokit } from '../util.js';
-import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -21,7 +21,11 @@ async function exec() {
   const maxActiveDays: number = parseInt(getRequiredInput('terminate_active_days'));
 
   const octokit = getOctokit(getRequiredInput('github_token'));
+
+  core.info(`Creating Demo Deployment Review for ${github.context.repo.owner}/${github.context.repo.repo} ref ${github.context.ref}`);
   const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
+
+  core.info(`Analyzing demo deployments...`)
   const analysis = await demoReview.analyze(warningActiveDays, maxActiveDays);
 
   core.info(`Demo deployment analysis`);

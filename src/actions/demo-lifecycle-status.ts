@@ -1,10 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { getRequiredInput } from '../action-utils.js';
 import { DEMO_STATES, LIFECYCLE_STATES } from '../constants.js';
 import { GitHubDeploymentManager } from '../GitHubDeploymentManager.js';
 import { getOctokit } from '../util.js';
-import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -51,13 +51,17 @@ async function exec() {
 
       const actor: string | undefined = deployment.payload?.actor;
       if (status.demoState === DEMO_STATES.marked_warning) {
+        core.info(`Adding warning message to issue ${issueId}...`);
         await deploymentManager.addIssueComment(issueId, getWarningMessage(actor));
       } else if (status.demoState === DEMO_STATES.marked_termination) {
+        core.info(`Adding termination message to issue ${issueId}...`);
         await deploymentManager.addIssueComment(issueId, getTerminationMessage(actor));
       }
 
-      core.info('done.');
+      core.info('✅ Success.');
     }
+  } else {
+    core.info(`Skipping status update for deployment ${deployment.id} as it is not in 'success' state.`);
   }
 }
 

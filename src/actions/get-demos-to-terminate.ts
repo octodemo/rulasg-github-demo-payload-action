@@ -1,9 +1,9 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { inspect } from 'util';
+import { getRequiredInput } from '../action-utils.js';
 import { DemoDeploymentReview, DemoReview } from '../DemoDeploymentReview.js';
 import { getOctokit } from '../util.js';
-import { getRequiredInput } from '../action-utils.js'
 
 async function run() {
   try {
@@ -19,7 +19,13 @@ run();
 async function exec() {
   const gracePeriod: number = parseInt(getRequiredInput('grace_period'));
   const octokit = getOctokit(getRequiredInput('github_token'));
+
+  core.info(`Retrieving demos to terminate after ${gracePeriod} days from GitHub API.`);
+
+  core.info(`Retrieving deployments for ${github.context.repo.owner}/${github.context.repo.repo} ref ${github.context.ref}`);
   const demoReview = await DemoDeploymentReview.createDemoReview(octokit, github.context.repo, github.context.ref);
+
+  core.info(`Retrieving demos to terminate...`)
   const toTerminate: DemoReview[] = await demoReview.getDemosToTerminate(gracePeriod);
 
   reportTerminations(toTerminate);
