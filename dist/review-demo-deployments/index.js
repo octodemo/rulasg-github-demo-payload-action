@@ -38512,6 +38512,7 @@ class DemoDeployment {
     data;
     deploymentManager;
     demoPayload;
+    cachedStatus;
     constructor(data, deploymentManager) {
         if (data.task !== DEMO_DEPLOYMENT_TASK) {
             throw new Error(`Invalid payload type ${data.task}`);
@@ -38557,8 +38558,11 @@ class DemoDeployment {
     get payload() {
         return this.demoPayload;
     }
-    getCurrentStatus() {
-        return this.deploymentManager.getDeploymentStatus(this.id);
+    async getCurrentStatus() {
+        if (!this.cachedStatus) {
+            this.cachedStatus = await this.deploymentManager.getDeploymentStatus(this.id);
+        }
+        return this.cachedStatus;
     }
     getTrackingIssue() {
         const payloadData = this.payload;
@@ -38988,14 +38992,17 @@ class DemoDeploymentReview {
         return results;
     }
     async loadDemoReviews() {
-        return this.getAllDemoDeployments()
-            .then(demos => {
-            const promises = [];
-            demos?.forEach(demo => {
-                promises.push(this.generateDemoReview(demo));
-            });
-            return Promise.all(promises);
-        });
+        const demos = await this.getAllDemoDeployments();
+        if (!demos) {
+            return [];
+        }
+        const demoReviews = [];
+        // We handle this sequentially, as we risk running into secondary rate limits if we don't
+        for (const demo of demos) {
+            const review = await this.generateDemoReview(demo);
+            demoReviews.push(review);
+        }
+        return demoReviews;
     }
     async generateDemoReview(demo) {
         const status = await demo.getCurrentStatus(), demoActiveDays = await demo.getActiveDays(), trackingIssue = demo.getTrackingIssue();

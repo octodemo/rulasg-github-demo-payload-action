@@ -38486,6 +38486,7 @@ class DemoDeployment {
     data;
     deploymentManager;
     demoPayload;
+    cachedStatus;
     constructor(data, deploymentManager) {
         if (data.task !== DEMO_DEPLOYMENT_TASK) {
             throw new Error(`Invalid payload type ${data.task}`);
@@ -38531,8 +38532,11 @@ class DemoDeployment {
     get payload() {
         return this.demoPayload;
     }
-    getCurrentStatus() {
-        return this.deploymentManager.getDeploymentStatus(this.id);
+    async getCurrentStatus() {
+        if (!this.cachedStatus) {
+            this.cachedStatus = await this.deploymentManager.getDeploymentStatus(this.id);
+        }
+        return this.cachedStatus;
     }
     getTrackingIssue() {
         const payloadData = this.payload;
