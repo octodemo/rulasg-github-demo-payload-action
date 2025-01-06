@@ -98,6 +98,30 @@ describe('DemoDeploymentReview', () => {
 
       expect(results.to_warn).toHaveLength(1);
       expect(results.to_warn[0].demo.id).toBe(demoDeployment.id);
+      expect(results.to_terminate).toHaveLength(0);
+    });
+
+    // This test is a result of the actual situation and configuration of github.com/ocotdemo where warn- and terminate-days are configured with the same value, resulting in demos simultainously being flagged for deletion & warn
+    // See https://github.com/octodemo/bootstrap/actions/runs/12565323939/workflow
+    it('given the same input for warningDays and maxActiveDays and the demo not having a warning just yet, only puts the demo into the warning state.', async () => {
+      const fakeStatusDate = '2024-10-04T00:00:00.000Z';
+      const fakeToday = new Date('2024-10-10T00:00:00.000Z');
+      vi.setSystemTime(fakeToday);
+
+      const moctokit = createMocktokit();
+      const demoDeployment = createMockDeployment({ task: 'demo:deployment' });
+
+      moctokit.paginateCalledWith("GET /repos/{owner}/{repo}/deployments").mockResolvedValueOnce([demoDeployment]);
+
+      moctokit.paginateCalledWith("GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses").mockResolvedValue([createMockDeploymentStatus({ description: DEMO_STATES.provisioned, created_at: fakeStatusDate })]);
+
+      const demoDeploymentReview = await DemoDeploymentReview.createDemoReview(moctokit, { owner: 'octodemo', repo: 'bootstrap' });
+
+      const results = await demoDeploymentReview.analyze(5, 5);
+
+      expect(results.to_warn).toHaveLength(1);
+      expect(results.to_warn[0].demo.id).toBe(demoDeployment.id);
+      expect(results.to_terminate).toHaveLength(0);
     });
 
     it('correctly identifies demos to terminate when they are in warning state and older than 15 days', async () => {
