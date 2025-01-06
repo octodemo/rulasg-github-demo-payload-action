@@ -38958,6 +38958,7 @@ class DemoDeploymentReview {
                     results.to_warn.push(review);
                 }
                 if (daysInState > maxActiveDays
+                    && review.lifecycle_state == DEMO_STATES.marked_warning
                     && review.lifecycle_state !== DEMO_STATES.marked_termination) {
                     results.to_terminate.push(review);
                 }
