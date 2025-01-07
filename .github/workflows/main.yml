@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+    # permissions:
+      # contents: write
+      
+jobs:
+    release:
+      name: Release
+      runs-on: ubuntu-latest
+      permissions: write-all
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          
+        - name: Use Node.js 20
+          uses: actions/setup-node@v4
+          with:
+            node-version: "20"
+        
+        - name: Install dependencies
+          run: npm ci
+        
+        - name: Build
+          run: npm run build
+        
+        - name: Get Release Token
+          id: get_workflow_token
+          uses: peter-murray/workflow-application-token-action@v4
+          with:
+            application_id: ${{ secrets.APP_ID }}
+            application_private_key: ${{ secrets.APP_PRIVATE_KEY }}
+        
+        - name: Semantic Release
+          run: npx semantic-release
+          env:
+            GITHUB_TOKEN: ${{ steps.get_workflow_token.outputs.token }}
+
